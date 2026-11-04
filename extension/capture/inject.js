@@ -7,7 +7,6 @@
   let fastRunning = false;
 
   let onMessage = () => {};
-  let capturing = false;
   const post = (msg) => onMessage(msg);
   const origFetch = window.fetch.bind(window);
   globalThis.tweetstashCapture = { subscribe: (fn) => { onMessage = fn; }, command };
@@ -25,11 +24,6 @@
     };
     walk(o);
     return found;
-  }
-
-  function handlePayload(url, json, origin) {
-    lastCursor = findBottomCursor(json) || lastCursor;
-    post({ type: "page", payload: json, origin });
   }
 
   // --- fast sync: replay the bookmarks query with successive cursors ---
@@ -382,20 +376,14 @@
     if (cmd === "fast" && !fastRunning) fastSync();
     if (cmd === "turbo" && !fastRunning) turboSync(extra.map);
     if (cmd === "probe") probe(extra.options || {});
-    // URL + headers of X's own bookmarks request, seen by the background worker.
-    if (cmd === "request" && !fastRunning && !capturing) {
+    // URL + headers of X's own bookmarks request, seen by the background worker. Remembered so Sync can
+    // replay it; nothing is fetched or saved until you click Sync.
+    if (cmd === "request") {
       let url;
       try { url = new URL(extra.url); } catch { return; }
       if (url.origin !== location.origin || !IS_BOOKMARKS.test(url.pathname)) return;
       lastReq = { url: url.href, headers: extra.headers };
       post({ type: "request-seen" });
-      // Isolated scripts cannot hook page fetch/XHR. Replay the observed request once instead.
-      capturing = true;
-      origFetch(url.href, { headers: { ...extra.headers, "x-tweetstash-replay": "1" }, credentials: "include", redirect: "error" })
-        .then((res) => res.ok ? res.json() : null)
-        .then((json) => { if (json) handlePayload(url.href, json, "page"); })
-        .catch((error) => post({ type: "capture-error", error: error.message }))
-        .finally(() => { capturing = false; });
     }
     if (cmd === "stop") fastRunning = false;
   }

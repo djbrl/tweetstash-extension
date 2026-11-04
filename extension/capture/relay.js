@@ -117,7 +117,7 @@
 
   const UP_TO_DATE = "All your bookmarks are already saved.";
   const savedText = () => `Saved ${state.added.toLocaleString()} new bookmark${state.added === 1 ? "" : "s"}.`;
-  const readyText = () => state.upToDateAt ? UP_TO_DATE : state.known && state.historyDone ? "Ready. Sync grabs anything new." : "Ready. Sync grabs your whole history.";
+  const readyText = () => state.upToDateAt ? UP_TO_DATE : state.historyDone ? "Ready. Update grabs anything new." : "Ready. Sync grabs your whole history.";
 
   function refreshKnown() {
     send({ type: "stats", account: account() }, (r) => {
@@ -217,10 +217,8 @@
       const cls = catchup ? (i < flying ? "fly" : "on") : i < done ? "on" : i < done + flying ? "fly" : "";
       if (d.className !== cls) d.className = cls;
     });
-    const secs = (Date.now() - state.startedAt) / 1000;
-    $("#tn-time").textContent = state.mode || state.complete ? secs.toFixed(1) + "s" : "";
-    $("#tn-time").hidden = !(state.mode || state.complete);
-    $("#tn-acct").hidden = !!(state.mode || state.complete);
+    // First time it's Sync (the whole history); once that's done, Update (just what's new).
+    $("#tn-sync-label").textContent = state.historyDone ? "Update" : "Sync";
     if (!raf) raf = requestAnimationFrame(tick);
     $("#tn-sync").hidden = !!state.mode;
     $("#tn-stop").hidden = !state.mode;
@@ -230,8 +228,7 @@
     // Collapsed: a one-line pill with the count, plus a thin progress line while syncing.
     const min = panel.classList.contains("tn-min");
     $("#tn-mini").hidden = !min || !(state.mode || state.complete || state.known);
-    $("#tn-acct").hidden = $("#tn-acct").hidden || min;
-    $("#tn-time").hidden = $("#tn-time").hidden || min;
+    $("#tn-acct").hidden = min;
     $(".tn-bar").style.transform = `scaleX(${state.complete ? 1 : state.mode ? Math.max(.03, frac ?? done / DOTS) : 0})`;
     $(".tn-bar").hidden = !min || !state.mode;
   }
@@ -370,7 +367,7 @@
         #tweet-nest-panel [hidden]{display:none!important}
       </style>
       <div class="tn-h" id="tn-head">${logo(18)}<span id="tn-title">tweetstash</span>
-        <span class="tn-right" id="tn-acct"></span><span class="tn-right tn-mono" id="tn-time" hidden></span>
+        <span class="tn-right" id="tn-acct"></span>
         <span class="tn-right tn-mono" id="tn-mini" hidden></span>
         <button class="tn-fold" id="tn-fold" title="Collapse" aria-label="Collapse panel"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6l4 4 4-4"/></svg></button></div>
       <div class="tn-more"><div>
@@ -384,7 +381,7 @@
       <div class="tn-row">
         <span class="tn-gap"></span>
         <button class="tn-ghost" id="tn-stop" hidden><svg width="10" height="10" viewBox="0 0 10 10"><rect width="10" height="10" rx="2" fill="currentColor"/></svg>Stop</button>
-        <button class="tn-primary" id="tn-sync"><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13.5 6.5A5.5 5.5 0 0 0 3.3 4.6"/><path d="M3 2v3h3"/><path d="M2.5 9.5a5.5 5.5 0 0 0 10.2 1.9"/><path d="M13 14v-3h-3"/></svg>Sync</button>
+        <button class="tn-primary" id="tn-sync"><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13.5 6.5A5.5 5.5 0 0 0 3.3 4.6"/><path d="M3 2v3h3"/><path d="M2.5 9.5a5.5 5.5 0 0 0 10.2 1.9"/><path d="M13 14v-3h-3"/></svg><span id="tn-sync-label">Sync</span></button>
       </div>
       </div></div>
       <div class="tn-bar" hidden></div>
