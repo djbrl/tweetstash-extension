@@ -14,7 +14,7 @@ You need Chrome 120 or newer (or another Chromium browser: Edge, Brave, Arc).
 1. Download the code: on GitHub, **Code → Download ZIP**, then unzip it. Or:
 
    ```bash
-   git clone https://github.com/Djbrl/tweetstash-extension.git
+   git clone https://github.com/djbrl/tweetstash-extension.git
    ```
 
 2. Open `chrome://extensions`, turn on **Developer mode** (top right), click **Load unpacked** and pick
