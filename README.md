@@ -9,13 +9,40 @@ leaves that out to stay small and install in one step.
 
 ## Install (developer mode, for now)
 
-1. Open `chrome://extensions`, turn on **Developer mode**, click **Load unpacked** and pick `extension/`.
-2. Click the TweetStash icon in the toolbar to open your library.
-3. Open https://x.com/i/bookmarks and click **Sync** in the panel at the bottom right. It fetches your
+You need Chrome 120 or newer (or another Chromium browser: Edge, Brave, Arc).
+
+1. Download the code: on GitHub, **Code → Download ZIP**, then unzip it. Or:
+
+   ```bash
+   git clone https://github.com/Djbrl/tweetstash-extension.git
+   ```
+
+2. Open `chrome://extensions`, turn on **Developer mode** (top right), click **Load unpacked** and pick
+   the `extension/` folder inside it. Keep the folder: Chrome runs the extension from there.
+3. Your library opens by itself. Later, click the TweetStash icon in the toolbar to open it (pin it
+   from the puzzle-piece menu so it stays visible).
+4. Open https://x.com/i/bookmarks and click **Sync** in the panel at the bottom right. It fetches your
    whole history; after that the button says **Update** and only fetches what's new.
-4. For AI tagging and description search, add your Anthropic API key in **Settings**.
+5. For AI tagging and description search, add your Anthropic API key in **Settings**.
 
 Moving from the server version? In its Settings, **Export**, then here, **Settings → Restore**.
+
+To update, replace the folder's contents with the new version and click the reload arrow on the
+TweetStash card in `chrome://extensions`. Your library is kept.
+
+## Uninstall
+
+There's no model or other download to clean up: everything lives inside the extension.
+
+1. **Keep a copy first, if you want one**: Settings → **Download backup**. Removing the extension
+   deletes your library and your API key for good.
+2. Open `chrome://extensions` and click **Remove** on TweetStash. Chrome deletes the extension's
+   storage with it (the database, settings and key).
+3. Delete the folder you loaded it from.
+
+Left behind, if you care to remove them: any backups you downloaded (in your Downloads folder), and a
+one-character flag on x.com that remembers whether the panel was minimized (cleared with x.com's site
+data, in Chrome's **Settings → Privacy → Site data**).
 
 ## What's where
 
