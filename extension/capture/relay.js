@@ -218,13 +218,16 @@
       if (d.className !== cls) d.className = cls;
     });
     // First time it's Sync (the whole history); once that's done, Update (just what's new).
-    $("#tn-sync-label").textContent = state.historyDone ? "Update" : "Sync";
+    $("#tn-sync-label").textContent = $("#tn-msync-label").textContent = state.historyDone ? "Update" : "Sync";
     if (!raf) raf = requestAnimationFrame(tick);
     $("#tn-sync").hidden = !!state.mode;
     $("#tn-stop").hidden = !state.mode;
+    $("#tn-msync").hidden = !!state.mode;
+    $("#tn-mstop").hidden = !state.mode;
     // The tweet ticker only runs while stashing.
     $("#tn-latest").hidden = !state.mode || !$("#tn-latest .tn-txt").textContent;
-    // Collapsed: a one-line pill with the count, plus a thin progress line while syncing.
+    // Collapsed: one line with the count, Sync/Update (or Stop) and Go to my stash, plus a thin progress
+    // line while syncing. Expanding shows the big counter, the dots and the latest bookmark.
     const min = panel.classList.contains("tn-min");
     $("#tn-mini").hidden = !min || !(state.mode || state.complete || state.known);
     $("#tn-acct").hidden = min;
@@ -354,7 +357,16 @@
         #tweet-nest-panel.tn-min .tn-more{grid-template-rows:0fr;opacity:0}
         #tweet-nest-panel.tn-min .tn-h{padding:12px 12px 12px 14px}
         #tweet-nest-panel{transition:width .3s cubic-bezier(.2,.8,.2,1)}
-        #tweet-nest-panel.tn-min{width:240px}
+        #tweet-nest-panel.tn-min{width:330px}
+        #tweet-nest-panel .tn-acts{display:none;align-items:center;gap:4px;margin-left:6px}
+        #tweet-nest-panel.tn-min .tn-acts{display:inline-flex}
+        #tweet-nest-panel .tn-acts button{height:28px;padding:0 10px;border-radius:8px;font-size:12.5px;gap:6px}
+        #tweet-nest-panel .tn-acts .tn-icon{width:28px;padding:0;justify-content:center}
+        #tweet-nest-panel .tn-acts svg{width:13px;height:13px}
+        #tweet-nest-panel #tn-msync:hover svg{transform:rotate(180deg)}
+        #tweet-nest-panel #tn-msync svg{transition:transform .5s cubic-bezier(.2,.8,.2,1)}
+        #tweet-nest-panel #tn-mgo:hover svg{transform:translateX(2px)}
+        #tweet-nest-panel #tn-mgo svg{transition:transform .2s}
         #tweet-nest-panel .tn-bar{position:absolute;left:0;right:0;bottom:0;height:2px;background:#ff5b1f;transform-origin:left;transition:transform .3s}
         #tweet-nest-panel .tn-link{height:auto;padding:4px 2px;border:0;background:none;color:#888;font-size:12px;font-weight:500;text-decoration:underline;text-decoration-color:#d4d4d4;text-underline-offset:3px}
         #tweet-nest-panel .tn-link:hover{color:#0a0a0a;text-decoration-color:currentColor}
@@ -364,6 +376,11 @@
       <div class="tn-h" id="tn-head">${logo(18)}<span id="tn-title">tweetstash</span>
         <span class="tn-right" id="tn-acct"></span>
         <span class="tn-right tn-mono" id="tn-mini" hidden></span>
+        <span class="tn-acts">
+          <button class="tn-ghost" id="tn-mstop" type="button" hidden><svg width="10" height="10" viewBox="0 0 10 10"><rect width="10" height="10" rx="2" fill="currentColor"/></svg>Stop</button>
+          <button class="tn-primary" id="tn-msync" type="button"><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13.5 6.5A5.5 5.5 0 0 0 3.3 4.6"/><path d="M3 2v3h3"/><path d="M2.5 9.5a5.5 5.5 0 0 0 10.2 1.9"/><path d="M13 14v-3h-3"/></svg><span id="tn-msync-label">Sync</span></button>
+          <button class="tn-ghost tn-icon" id="tn-mgo" type="button" title="Go to my stash" aria-label="Go to my stash"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h10M9 4l4 4-4 4"/></svg></button>
+        </span>
         <button class="tn-fold" id="tn-fold" title="Collapse" aria-label="Collapse panel"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6l4 4 4-4"/></svg></button></div>
       <div class="tn-more"><div>
       <div class="tn-body">
@@ -384,20 +401,28 @@
     document.getElementById("tweet-nest-panel")?.remove(); // leftover from an older copy of the script
     document.documentElement.appendChild(panel);
     dotEls = [...panel.querySelectorAll(".tn-dots i")];
-    panel.querySelector("#tn-sync").onclick = (e) => { if (e.isTrusted) startSync(false); };
-    panel.querySelector("#tn-stop").onclick = () => { stop(); setStatus("Stopped."); };
-    panel.querySelector("#tn-go").onclick = (e) => { if (e.isTrusted) send({ type: "open-app" }); };
-    // Collapse via the chevron or a click anywhere on the header; remembered across pages.
+    panel.querySelector("#tn-sync").onclick = (e) => syncNow(e);
+    panel.querySelector("#tn-stop").onclick = () => stopNow();
+    const goStash = (e) => { if (e.isTrusted) send({ type: "open-app" }); };
+    const syncNow = (e) => { if (e.isTrusted) startSync(false); };
+    const stopNow = () => { stop(); setStatus("Stopped."); };
+    panel.querySelector("#tn-go").onclick = goStash;
+    panel.querySelector("#tn-mgo").onclick = goStash;
+    panel.querySelector("#tn-msync").onclick = syncNow;
+    panel.querySelector("#tn-mstop").onclick = stopNow;
+    // The panel always appears collapsed; the chevron or a click on the header (not its buttons) expands it.
     const setMin = (min) => {
       panel.classList.toggle("tn-min", min);
       const fold = panel.querySelector("#tn-fold");
       fold.title = min ? "Expand" : "Collapse";
       fold.setAttribute("aria-label", min ? "Expand panel" : "Collapse panel");
-      try { localStorage.setItem("tweetstash-min", min ? "1" : ""); } catch {}
       render();
     };
-    panel.querySelector("#tn-head").onclick = () => setMin(!panel.classList.contains("tn-min"));
-    try { if (localStorage.getItem("tweetstash-min")) panel.classList.add("tn-min"); } catch {}
+    panel.querySelector("#tn-head").onclick = (e) => {
+      if (e.target.closest(".tn-acts")) return; // the collapsed bar's own buttons
+      setMin(!panel.classList.contains("tn-min"));
+    };
+    setMin(true);
     refreshKnown();
     render();
   }

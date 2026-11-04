@@ -40,9 +40,7 @@ There's no model or other download to clean up: everything lives inside the exte
    storage with it (the database, settings and key).
 3. Delete the folder you loaded it from.
 
-Left behind, if you care to remove them: any backups you downloaded (in your Downloads folder), and a
-one-character flag on x.com that remembers whether the panel was minimized (cleared with x.com's site
-data, in Chrome's **Settings → Privacy → Site data**).
+Left behind: any backups you downloaded, in your Downloads folder.
 
 ## What's where
 

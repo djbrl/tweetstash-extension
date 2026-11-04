@@ -94,12 +94,14 @@ try {
   await xLoadsBookmarks(worker, tabs[0].id);
   await xpage.waitForTimeout(500);
   const before = (await api(dash, "GET", "/api/stats")).result.total;
-  const label = await xpage.locator("#tn-sync").innerText();
+  const collapsed = await xpage.evaluate(() => document.querySelector("#tweet-nest-panel").classList.contains("tn-min"));
+  check("the panel appears collapsed", () => assert.equal(collapsed, true));
+  const label = await xpage.locator("#tn-msync").innerText();
   if (process.env.SCREENSHOT) await xpage.locator("#tweet-nest-panel").screenshot({ path: process.env.SCREENSHOT.replace(/\.png$/, "-first.png") });
   check("opening the bookmarks page saves nothing until you click Sync", () => { assert.equal(before, 0); assert.equal(label.trim(), "Sync"); });
-  const goVisible = await xpage.locator("#tn-go").isVisible();
-  check("Go to my stash is always next to Sync", () => assert.equal(goVisible, true));
-  await xpage.locator("#tn-sync").click();
+  const goVisible = await xpage.locator("#tn-mgo").isVisible();
+  check("Go to my stash is always next to Sync, even collapsed", () => assert.equal(goVisible, true));
+  await xpage.locator("#tn-msync").click();
   let stats;
   for (let i = 0; i < 60; i++) {
     stats = (await api(dash, "GET", "/api/stats")).result;
@@ -179,7 +181,7 @@ try {
   const xTab = (await worker.evaluate(() => chrome.tabs.query({ url: "https://x.com/*" }))).at(-1);
   await xLoadsBookmarks(worker, xTab.id);
   await xLong.waitForTimeout(500);
-  await xLong.locator("#tn-sync").click();
+  await xLong.locator("#tn-msync").click();
   const full = await waitFor((r) => r.count >= 300 && r.historyDone);
   check("Sync fetches the whole history of a long list", () => { assert.equal(full.count, 300); assert.equal(full.historyDone, true); });
   await xLong.waitForFunction(() => document.querySelector("#tn-sync-label")?.textContent === "Update", null, { timeout: 5000 });
@@ -188,8 +190,12 @@ try {
   list.unshift(...Array.from({ length: 5 }, (_, i) => ({ id: String(800000000 + i), si: 1900000000000000000n + BigInt(5 - i) * 1000n })));
   await xLong.waitForTimeout(500);
   if (process.env.SCREENSHOT) await xLong.locator("#tweet-nest-panel").screenshot({ path: process.env.SCREENSHOT.replace(/\.png$/, "-update.png") });
+  if (process.env.SCREENSHOT) await xLong.locator("#tweet-nest-panel").screenshot({ path: process.env.SCREENSHOT.replace(/\.png$/, "-collapsed.png") });
+  await xLong.locator("#tn-head").click({ position: { x: 40, y: 20 } }); // expand: the full panel's Update works too
+  await xLong.waitForTimeout(400);
   await xLong.locator("#tn-sync").click();
   const caught = await waitFor((r) => r.count >= 305);
+  if (process.env.SCREENSHOT) await xLong.locator("#tweet-nest-panel").screenshot({ path: process.env.SCREENSHOT.replace(/\.png$/, "-expanded.png") });
   check("after that, Update picks up new bookmarks", () => assert.equal(caught.count, 305));
 
   if (process.env.SCREENSHOT) { await again.setViewportSize({ width: 1280, height: 800 }); await again.reload(); await again.waitForSelector(".card"); await again.waitForTimeout(1500); await again.screenshot({ path: process.env.SCREENSHOT }); }
