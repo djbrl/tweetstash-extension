@@ -11,7 +11,8 @@ like; this one leaves it out to stay small.
 
 1. Open `chrome://extensions`, turn on **Developer mode**, click **Load unpacked** and pick `extension/`.
 2. Click the TweetStash icon in the toolbar to open your library.
-3. Open https://x.com/i/bookmarks and click **Sync** in the panel at the bottom right.
+3. Open https://x.com/i/bookmarks and click **Sync** in the panel at the bottom right. It fetches your
+   whole history; after that the button says **Update** and only fetches what's new.
 4. For AI tagging and description search, add your Anthropic API key in **Settings**.
 
 Moving from the server version? In its Settings, **Export**, then here, **Settings → Restore**.

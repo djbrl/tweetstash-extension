@@ -222,9 +222,8 @@
     if (!raf) raf = requestAnimationFrame(tick);
     $("#tn-sync").hidden = !!state.mode;
     $("#tn-stop").hidden = !state.mode;
-    // The tweet ticker only runs while stashing; when it's over, the same slot becomes "Go to my stash".
+    // The tweet ticker only runs while stashing.
     $("#tn-latest").hidden = !state.mode || !$("#tn-latest .tn-txt").textContent;
-    $("#tn-go").hidden = !!state.mode || !state.complete;
     // Collapsed: a one-line pill with the count, plus a thin progress line while syncing.
     const min = panel.classList.contains("tn-min");
     $("#tn-mini").hidden = !min || !(state.mode || state.complete || state.known);
@@ -326,12 +325,8 @@
           background:#fff;border:1px solid #d4d4d4;border-radius:12px}
         #tweet-nest-panel .tn-latest.in .tn-card{animation:tn-in .35s cubic-bezier(.2,.8,.2,1)}
         @keyframes tn-in{from{opacity:0;transform:translateY(10px);filter:blur(3px)}to{opacity:1;transform:none;filter:none}}
-        #tweet-nest-panel #tn-go-wrap:has(#tn-go[hidden]){display:none}
-        #tweet-nest-panel .tn-go{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;height:60px;padding:0 14px;border-radius:12px;
-          background:#fff;color:#0a0a0a;border:1px solid #d4d4d4;font-size:14px;font-weight:600;animation:tn-in .35s cubic-bezier(.2,.8,.2,1)}
-        #tweet-nest-panel .tn-go:hover{border-color:#0a0a0a}
-        #tweet-nest-panel .tn-go svg{transition:transform .2s}
-        #tweet-nest-panel .tn-go:hover svg{transform:translateX(3px)}
+        #tweet-nest-panel #tn-go svg{transition:transform .2s}
+        #tweet-nest-panel #tn-go:hover svg{transform:translateX(3px)}
         /* Slide in when the panel appears, so you notice it on the bookmarks page. */
         #tweet-nest-panel{animation:tn-enter .6s .2s cubic-bezier(.16,1,.3,1) both}
         @keyframes tn-enter{from{opacity:0;transform:translateY(28px) scale(.96)}to{opacity:1;transform:none}}
@@ -377,8 +372,8 @@
         <div class="tn-status" id="tn-status"></div>
       </div>
       <div class="tn-latest" id="tn-latest" hidden><div class="tn-card"><span class="tn-thumb"></span><div class="tn-txt"></div></div></div>
-      <div class="tn-latest" id="tn-go-wrap"><button class="tn-go" id="tn-go" type="button" hidden>Go to my stash<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h10M9 4l4 4-4 4"/></svg></button></div>
       <div class="tn-row">
+        <button class="tn-ghost" id="tn-go" type="button">Go to my stash<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h10M9 4l4 4-4 4"/></svg></button>
         <span class="tn-gap"></span>
         <button class="tn-ghost" id="tn-stop" hidden><svg width="10" height="10" viewBox="0 0 10 10"><rect width="10" height="10" rx="2" fill="currentColor"/></svg>Stop</button>
         <button class="tn-primary" id="tn-sync"><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13.5 6.5A5.5 5.5 0 0 0 3.3 4.6"/><path d="M3 2v3h3"/><path d="M2.5 9.5a5.5 5.5 0 0 0 10.2 1.9"/><path d="M13 14v-3h-3"/></svg><span id="tn-sync-label">Sync</span></button>

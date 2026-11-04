@@ -97,6 +97,8 @@ try {
   const label = await xpage.locator("#tn-sync").innerText();
   if (process.env.SCREENSHOT) await xpage.locator("#tweet-nest-panel").screenshot({ path: process.env.SCREENSHOT.replace(/\.png$/, "-first.png") });
   check("opening the bookmarks page saves nothing until you click Sync", () => { assert.equal(before, 0); assert.equal(label.trim(), "Sync"); });
+  const goVisible = await xpage.locator("#tn-go").isVisible();
+  check("Go to my stash is always next to Sync", () => assert.equal(goVisible, true));
   await xpage.locator("#tn-sync").click();
   let stats;
   for (let i = 0; i < 60; i++) {

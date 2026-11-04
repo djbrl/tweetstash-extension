@@ -3,6 +3,10 @@
 // prepare().all/get/run API as node:sqlite, so the queries are shared with the TweetStash server app.
 import sqlite3InitModule from "../../vendor/sqlite3.mjs";
 
+// Only the "SAH pool" storage below is used. The library would also try its other OPFS modes at startup;
+// those need special page headers an extension doesn't have, and they log errors in chrome://extensions
+// when they fail, so they're switched off.
+globalThis.sqlite3ApiConfig = { disable: { vfs: { opfs: true, "opfs-wl": true } } };
 const sqlite3 = await sqlite3InitModule();
 // "SAH pool" is the OPFS storage that works without special page headers. One connection at a time,
 // which is why only the engine worker ever opens the database.
