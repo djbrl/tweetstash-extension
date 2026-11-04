@@ -3,9 +3,9 @@
 Your X/Twitter bookmarks in a searchable library, with AI tagging and "describe it" search. Everything
 lives inside the Chrome extension: no server, no terminal, nothing to install besides the extension.
 
-This is the extension-only version of [TweetStash](https://github.com/Djbrl/tweetstash). The server
-version adds a local image model that helps description search find posts by what their pictures look
-like; this one leaves it out to stay small.
+This is the extension-only edition of TweetStash. A self-hosted server edition also exists; it adds a
+local image model that helps description search find posts by what their pictures look like. This one
+leaves that out to stay small and install in one step.
 
 ## Install (developer mode, for now)
 
