@@ -303,7 +303,7 @@
     panel.innerHTML = `
       <style>
         @font-face{font-family:"tweetstash Inter";src:url("${chrome.runtime.getURL("fonts/inter.woff2")}") format("woff2");font-weight:100 900;font-display:swap}
-        #tweet-nest-panel{position:fixed;right:20px;bottom:20px;z-index:2147483647;width:340px;box-sizing:border-box;
+        #tweet-nest-panel{position:fixed;right:20px;bottom:20px;z-index:2147483647;width:400px;box-sizing:border-box;
           font:13px/1.4 "tweetstash Inter",Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#0a0a0a;
           background:#fff;border:1px solid #eaeaea;border-radius:16px;overflow:hidden;
           box-shadow:0 1px 2px rgba(0,0,0,.04),0 24px 60px rgba(0,0,0,.18);font-feature-settings:"tnum" 1}
@@ -357,16 +357,14 @@
         #tweet-nest-panel.tn-min .tn-more{grid-template-rows:0fr;opacity:0}
         #tweet-nest-panel.tn-min .tn-h{padding:12px 12px 12px 14px}
         #tweet-nest-panel{transition:width .3s cubic-bezier(.2,.8,.2,1)}
-        #tweet-nest-panel.tn-min{width:330px}
+        #tweet-nest-panel.tn-min{width:400px}
         #tweet-nest-panel .tn-acts{display:none;align-items:center;gap:4px;margin-left:6px}
         #tweet-nest-panel.tn-min .tn-acts{display:inline-flex}
         #tweet-nest-panel .tn-acts button{height:28px;padding:0 10px;border-radius:8px;font-size:12.5px;gap:6px}
-        #tweet-nest-panel .tn-acts .tn-icon{width:28px;padding:0;justify-content:center}
         #tweet-nest-panel .tn-acts svg{width:13px;height:13px}
         #tweet-nest-panel #tn-msync:hover svg{transform:rotate(180deg)}
         #tweet-nest-panel #tn-msync svg{transition:transform .5s cubic-bezier(.2,.8,.2,1)}
-        #tweet-nest-panel #tn-mgo:hover svg{transform:translateX(2px)}
-        #tweet-nest-panel #tn-mgo svg{transition:transform .2s}
+
         #tweet-nest-panel .tn-bar{position:absolute;left:0;right:0;bottom:0;height:2px;background:#ff5b1f;transform-origin:left;transition:transform .3s}
         #tweet-nest-panel .tn-link{height:auto;padding:4px 2px;border:0;background:none;color:#888;font-size:12px;font-weight:500;text-decoration:underline;text-decoration-color:#d4d4d4;text-underline-offset:3px}
         #tweet-nest-panel .tn-link:hover{color:#0a0a0a;text-decoration-color:currentColor}
@@ -379,7 +377,7 @@
         <span class="tn-acts">
           <button class="tn-ghost" id="tn-mstop" type="button" hidden><svg width="10" height="10" viewBox="0 0 10 10"><rect width="10" height="10" rx="2" fill="currentColor"/></svg>Stop</button>
           <button class="tn-primary" id="tn-msync" type="button"><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13.5 6.5A5.5 5.5 0 0 0 3.3 4.6"/><path d="M3 2v3h3"/><path d="M2.5 9.5a5.5 5.5 0 0 0 10.2 1.9"/><path d="M13 14v-3h-3"/></svg><span id="tn-msync-label">Sync</span></button>
-          <button class="tn-ghost tn-icon" id="tn-mgo" type="button" title="Go to my stash" aria-label="Go to my stash"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h10M9 4l4 4-4 4"/></svg></button>
+          <button class="tn-ghost" id="tn-mgo" type="button">Go to stash</button>
         </span>
         <button class="tn-fold" id="tn-fold" title="Collapse" aria-label="Collapse panel"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6l4 4 4-4"/></svg></button></div>
       <div class="tn-more"><div>
