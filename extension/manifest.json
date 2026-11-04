@@ -1,0 +1,29 @@
+{
+  "manifest_version": 3,
+  "name": "TweetStash",
+  "version": "0.1.0",
+  "description": "Your X/Twitter bookmarks, searchable and AI-tagged, stored only in this browser.",
+  "minimum_chrome_version": "120",
+  "permissions": ["webRequest", "scripting", "offscreen", "unlimitedStorage"],
+  "host_permissions": [
+    "https://x.com/*",
+    "https://twitter.com/*",
+    "https://pbs.twimg.com/*",
+    "https://api.anthropic.com/*"
+  ],
+  "background": { "service_worker": "background.js", "type": "module" },
+  "action": { "default_title": "Open TweetStash" },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://x.com/*", "https://twitter.com/*"],
+      "js": ["capture/inject.js", "capture/relay.js"],
+      "run_at": "document_start"
+    }
+  ],
+  "web_accessible_resources": [
+    { "resources": ["fonts/inter.woff2"], "matches": ["https://x.com/*", "https://twitter.com/*"] }
+  ]
+}

@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <!-- X's media servers refuse videos (403) when the referrer is another site; sending none lets them play. -->
+  <meta name="referrer" content="no-referrer">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>tweetstash</title>
+  <!-- Apply a forced theme before anything paints, so there's no flash. -->
+  <script src="js/theme.js"></script>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'><rect width='40' height='40' rx='10' fill='%230a0a0a'/><path d='M13 10h14v20l-7-5-7 5z' fill='%23fafafa'/><circle cx='29' cy='11' r='4' fill='%23ff5b1f'/></svg>">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <aside class="sidebar" id="sidebar">
+    <a class="brand" href="index.html" data-home title="Back to all bookmarks">
+      <svg class="logo" viewBox="0 0 40 40" aria-hidden="true"><rect class="tile" width="40" height="40" rx="10"/><path class="mark" d="M13 10h14v20l-7-5-7 5z"/><circle class="dot" cx="29" cy="11" r="4"/></svg>
+      <div>
+        <div class="brand-name">tweetstash</div>
+        <div class="brand-sub" id="total-sub" hidden></div>
+      </div>
+    </a>
+
+    <nav class="nav">
+      <button class="nav-item active" data-reset>All bookmarks <span class="count" id="count-all">0</span></button>
+      <button class="nav-item" data-filter="untagged" data-value="1">Not tagged yet <span class="count" id="count-untagged">0</span></button>
+      <button class="nav-item" data-filter="failed" data-value="1" id="nav-failed" hidden>Couldn't tag <span class="count" id="count-failed">0</span></button>
+    </nav>
+
+    <section class="side-section" id="sec-accounts">
+      <h3>Accounts</h3>
+      <div class="list" id="list-accounts"></div>
+    </section>
+    <section class="side-section" id="sec-categories">
+      <h3>Categories</h3>
+      <div class="list" id="list-categories"></div>
+    </section>
+    <section class="side-section" id="sec-tags">
+      <h3>Tags</h3>
+      <div class="chips" id="list-tags"></div>
+    </section>
+    <section class="side-section" id="sec-authors">
+      <h3>Top authors</h3>
+      <div class="list" id="list-authors"></div>
+    </section>
+    <div class="side-foot">
+      <button class="empty-btn" id="settings-btn" type="button"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="8" cy="8" r="2.2"/><path d="M8 1.5v1.8M8 12.7v1.8M14.5 8h-1.8M3.3 8H1.5M12.6 3.4l-1.3 1.3M4.7 11.3l-1.3 1.3M12.6 12.6l-1.3-1.3M4.7 4.7 3.4 3.4"/></svg> Settings</button>
+      <button class="empty-btn" id="empty-btn" type="button">Empty stash</button>
+    </div>
+  </aside>
+
+  <main class="main">
+    <header class="topbar">
+      <div class="topbar-row">
+      <button class="icon-btn menu-btn" id="menu-btn" aria-label="Menu">☰</button>
+      <div class="search" id="search">
+        <div class="mode-seg" id="mode-seg">
+          <button type="button" data-mode="kw" class="on">Keyword</button>
+          <button type="button" data-mode="ai"><span class="sparkle">✦</span> Describe</button>
+        </div>
+        <span class="search-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="16" height="16"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2"/><path d="M20 20l-4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        </span>
+        <textarea id="q" rows="1" placeholder="Search text, authors, tags…" autocomplete="off" spellcheck="false"></textarea>
+        <button class="q-clear" id="q-clear" type="button" title="Clear search (Esc)" aria-label="Clear search" hidden><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8"/></svg></button>
+        <button class="mic" id="mic" type="button" title="Search by voice" hidden><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5.5" y="1.5" width="5" height="8" rx="2.5"/><path d="M3 7.5a5 5 0 0 0 10 0M8 12.5v2"/></svg></button>
+        <button class="ask-go" id="ask-go" type="button" hidden>Enter <span class="key" aria-hidden="true">↵</span></button>
+        <kbd id="kbd-slash">/</kbd>
+      </div>
+      </div>
+      <div class="topbar-row tools">
+      <select id="sort" aria-label="Sort">
+        <option value="saved_desc">Recently saved</option>
+        <option value="saved_asc">Oldest saved</option>
+        <option value="created_desc">Newest tweets</option>
+        <option value="created_asc">Oldest tweets</option>
+        <option value="likes_desc">Most liked</option>
+        <option value="views_desc">Most viewed</option>
+        <option value="author_asc">Author A–Z</option>
+      </select>
+      <div class="seg" id="media-seg">
+        <button data-media="" class="on">All</button>
+        <button data-media="1">Media</button>
+        <button data-media="video">Video</button>
+        <button data-media="links">Links</button>
+      </div>
+      <div class="seg" id="view-seg">
+        <button data-view="grid" class="on" title="Grid">▦</button>
+        <button data-view="list" title="List">☰</button>
+      </div>
+      <span class="grow"></span>
+      <button class="ai-btn" id="ai-btn" type="button"><span class="ai-fill" id="ai-fill"></span><span class="sparkle">✦</span><span id="ai-label">Tag</span></button>
+      </div>
+    </header>
+
+    <div class="active-filters" id="active-filters"></div>
+    <div class="result-line" id="result-line"></div>
+
+    <div class="empty" id="empty" hidden>
+      <svg class="logo empty-art" viewBox="0 0 40 40" aria-hidden="true"><rect class="tile" width="40" height="40" rx="10"/><path class="mark" d="M13 10h14v20l-7-5-7 5z"/><circle class="dot" cx="29" cy="11" r="4"/></svg>
+      <h2>Your stash is empty</h2>
+      <p>Install the capture extension, open your X bookmarks, and hit <b>Sync all</b>. Bookmarks show up here as they're captured.</p>
+      <ol>
+        <li>Chrome → <code>chrome://extensions</code> → turn on <b>Developer mode</b></li>
+        <li><b>Load unpacked</b> → pick <code>~/tweet-nest/extension</code></li>
+        <li>Open <a href="https://x.com/i/bookmarks" target="_blank" rel="noopener">x.com/i/bookmarks</a> → <b>Sync</b> in the panel</li>
+        <li>Switch X accounts and repeat for your second account</li>
+      </ol>
+    </div>
+
+    <div class="feed grid" id="feed"></div>
+    <div class="sentinel" id="sentinel"></div>
+  </main>
+
+  <div class="toast" id="toast" hidden></div>
+  <script src="js/main.js" type="module"></script>
+  <!-- Floating tagging window: shows a running AI tagging job, like the sync card on X. -->
+  <div class="tag-panel" id="tag-panel" hidden>
+    <div class="tp-head">
+      <span class="sparkle">✦</span><b id="tp-title">Tagging</b>
+      <span class="tp-right" id="tp-time"></span>
+      <button class="tp-x" id="tp-close" type="button" aria-label="Hide">×</button>
+    </div>
+    <div class="tp-count"><b id="tp-done">0</b><span id="tp-of"></span><span class="tp-cost" id="tp-cost"></span></div>
+    <div class="tp-dots" aria-hidden="true"></div>
+    <div class="tp-latest" id="tp-latest" hidden><span class="tp-thumb"></span><div class="tp-lines"><div class="tp-txt"></div><div class="tp-cat"></div></div></div>
+    <div class="tp-foot"><span class="tp-status" id="tp-status"></span><button class="btn" id="tp-show" type="button" hidden>Show them</button><button class="btn" id="tp-stop" type="button">Stop</button></div>
+  </div>
+
+  <dialog class="dlg settings-dlg" id="settings-dlg" aria-labelledby="set-title">
+    <div class="set-head"><h2 id="set-title">Settings</h2><button class="tp-x" id="set-close" type="button" aria-label="Close">×</button></div>
+    <div class="set-body">
+      <section class="set-sec">
+        <h3>Appearance</h3>
+        <div class="set-row"><span class="set-label">Theme</span>
+          <div class="seg" id="set-theme"><button type="button" data-v="system">System</button><button type="button" data-v="light">Light</button><button type="button" data-v="dark">Dark</button></div>
+        </div>
+      </section>
+
+      <section class="set-sec">
+        <h3>AI provider API key</h3>
+        <p class="set-help">Needed for AI tagging and description search; everything else works without it. Get a key from your AI provider's console (for Claude: <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">console.anthropic.com</a>).</p>
+        <p class="set-help">It's saved only on this computer, in <code>~/tweet-nest/.env</code>, readable by your user account only, and never shown again after you save it. Never share this key: anyone who has it can spend money on your account.</p>
+        <div class="key-ok" id="key-ok" hidden><i class="dot"></i><span>Key saved <code id="key-hint"></code></span><button class="btn" id="key-replace" type="button">Replace</button><button class="btn" id="key-remove" type="button">Remove</button></div>
+        <form class="key-form" id="key-form" hidden autocomplete="off">
+          <input type="password" id="key-input" placeholder="sk-ant-…" autocomplete="off" spellcheck="false" aria-label="Anthropic API key">
+          <button class="btn primary" id="key-save" type="submit">Save key</button>
+        </form>
+        <div class="key-msg" id="key-msg"></div>
+      </section>
+
+      <section class="set-sec">
+        <h3>AI tagging</h3>
+        <p class="set-help">Sorts each bookmark into a category and gives it a few tags. Pick a model by how specific you need the tags to be; prices are per 5,000 bookmarks.</p>
+        <div class="model-list" id="tag-models"></div>
+        <div class="set-row"><span class="set-label">Effort <small class="set-help" style="display:block;font-weight:400">Low fits most stashes. Medium and high make the chosen model more careful and accurate, but slower and pricier.</small></span>
+          <div class="seg" id="tag-effort"></div>
+        </div>
+        <div class="set-est" id="tag-est"></div>
+      </section>
+
+      <section class="set-sec">
+        <h3>Description search</h3>
+        <p class="set-help">Finds a bookmark from a description in your own words. Each search reads a shortlist of likely matches, images included.</p>
+        <div class="model-list" id="search-models"></div>
+        <div class="set-row"><span class="set-label">Effort <small class="set-help" style="display:block;font-weight:400">Low fits most searches. Medium and high take more care with vague descriptions, but are slower and pricier.</small></span><div class="seg" id="search-effort"></div></div>
+        <div class="set-est" id="search-est"></div>
+      </section>
+
+      <section class="set-sec">
+        <h3>Tags</h3>
+        <div class="set-row"><span class="set-label">Tidy tags<small class="set-help" style="display:block;font-weight:400">Merges duplicate tags ("drawing" and "drawings") so filters and search find everything. Shows the changes before applying them. About 20¢.</small></span><button class="btn" id="tidy-btn" type="button">Tidy tags</button></div>
+      </section>
+
+      <section class="set-sec">
+        <h3>Library</h3>
+        <div class="set-row"><label for="set-nsfw">Hide NSFW &amp; Thirst from All bookmarks<small class="set-help" style="display:block;font-weight:400">They stay one click away under Categories.</small></label>
+          <span class="switch"><input type="checkbox" id="set-nsfw"><span></span></span>
+        </div>
+        <div class="set-row"><label for="set-voice">Voice search language</label>
+          <select id="set-voice">
+            <option value="en-US">English (US)</option><option value="en-GB">English (UK)</option><option value="fr-FR">Français</option>
+            <option value="es-ES">Español</option><option value="pt-BR">Português (BR)</option><option value="de-DE">Deutsch</option>
+            <option value="ja-JP">日本語</option><option value="ko-KR">한국어</option><option value="ar-SA">العربية</option>
+          </select>
+        </div>
+      </section>
+
+      <section class="set-sec">
+        <h3>Data</h3>
+        <p class="set-help">Your stash lives only in this browser. <b>Uninstalling the extension deletes it</b>, so download a backup now and then.</p>
+        <div class="set-row"><span class="set-label">Back up everything<small class="set-help" style="display:block;font-weight:400">One file with every bookmark, tag and AI description.</small></span><button class="btn" id="set-backup" type="button">Download backup</button></div>
+        <div class="set-row"><span class="set-label">Restore a backup<small class="set-help" style="display:block;font-weight:400">Merges it into what's here; nothing is deleted. Also reads exports from the TweetStash app.</small></span><button class="btn" id="set-restore" type="button">Restore…</button><input type="file" id="restore-file" accept=".json,application/json" hidden></div>
+        <div class="set-row"><span class="set-label">Export as JSON<small class="set-help" style="display:block;font-weight:400">A readable list of bookmarks with their tags, for use elsewhere.</small></span><button class="btn" id="set-export" type="button">Export</button></div>
+      </section>
+    </div>
+  </dialog>
+
+  <dialog class="dlg" id="confirm-dlg">
+    <form method="dialog">
+      <h2 id="dlg-title"></h2>
+      <p id="dlg-body"></p>
+      <div class="dlg-actions">
+        <button class="btn" value="cancel" autofocus>Cancel</button>
+        <button class="btn primary" id="dlg-ok" value="ok"></button>
+      </div>
+    </form>
+  </dialog>
+</body>
+</html>
