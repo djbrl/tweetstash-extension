@@ -73,6 +73,7 @@ scripts/
   page scripts on x.com can't reach the capture code, and the panel there has no delete button.
 - Your X cookies never leave the browser. AI features send post text and small images straight from
   your browser to Anthropic, with your own key, which is stored with the rest of your data.
+- Full details: [privacy policy](PRIVACY.md).
 - Restored backups go through the same checks as captures (no script links, images only from X).
 
 ## Development
