@@ -71,6 +71,18 @@ export const tagChips = (tags) =>
 export const tagRow = (tags) => tagChips(tags) + '<button class="chip add-tag">+ tag</button>';
 
 // `note`: an optional line above the card (why it matched a search, why tagging failed).
+// Masonry: in the grid view each card spans one 2px grid row per 2px of its height (plus the 14px gap),
+// re-measured whenever it changes size (images loading, text expanding, window resizing). The grid places
+// cards in order, each at the highest free spot, so they read left to right like the bookmarks on X.
+const ROW = 2, GAP = 14;
+const sizer = new ResizeObserver((entries) => {
+  for (const e of entries) {
+    if (!e.target.isConnected) { sizer.unobserve(e.target); continue; } // the feed was cleared
+    const h = e.borderBoxSize?.[0]?.blockSize ?? e.target.offsetHeight;
+    if (h) e.target.style.setProperty("--rows", Math.ceil((h + GAP) / ROW));
+  }
+});
+
 export function card(b, note = "") {
   const url = postUrl(b.author_handle, b.id);
   const el = document.createElement("article");
@@ -102,6 +114,7 @@ export function card(b, note = "") {
       ${b.category ? `<span class="cat" data-category="${esc(b.category)}">${esc(b.category)}</span>` : ""}
     </div>`;
   el._data = b;
+  sizer.observe(el);
   return el;
 }
 

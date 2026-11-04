@@ -271,8 +271,10 @@ select {
 .why { margin: 0 0 10px; padding: 7px 10px; border-radius: 9px; background: var(--signal-soft); font-size: 12.5px; line-height: 1.4; }
 
 /* ---------- cards ---------- */
-.feed.grid { column-width: 330px; column-gap: 14px; }
-.feed.grid .card { break-inside: avoid; margin-bottom: 14px; }
+.feed.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); column-gap: 14px; grid-auto-rows: 2px; align-items: start; }
+/* Each card spans as many 2px rows as it is tall (set by cards.js), so the grid packs cards like a
+   masonry wall while keeping their order left to right, row by row. */
+.feed.grid .card { grid-row-end: span var(--rows, 120); }
 .feed.list { max-width: 720px; display: grid; gap: 10px; }
 
 .card {
