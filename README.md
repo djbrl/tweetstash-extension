@@ -1,7 +1,11 @@
+<img src="assets/logo.svg" width="56" height="56" alt="">
+
 # TweetStash (extension edition)
 
-Your X/Twitter bookmarks in a searchable library, with AI tagging and "describe it" search. Everything
-lives inside the Chrome extension: no server, no terminal, nothing to install besides the extension.
+**Search the posts you saved on X.** Keyword search, automatic tags and picture search for your bookmarks. Private, free, no account.
+
+Everything lives inside the Chrome extension: no server, no terminal, nothing to install besides the
+extension. Automatic tags and picture search use your own Anthropic API key.
 
 This is the extension-only edition of TweetStash. A self-hosted server edition also exists; it adds a
 local image model that helps description search find posts by what their pictures look like. This one

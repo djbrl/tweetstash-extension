@@ -8,7 +8,7 @@ Then fill each tab below. Every field you need is here, ready to paste.
 **Description** (the summary under the name comes from the manifest):
 
 ```
-TweetStash turns your X (Twitter) bookmarks into a library you can actually search.
+Search the posts you saved on X. Keyword search, automatic tags and picture search for your bookmarks. Private, free, no account.
 
 • Sync in one click: open your bookmarks on x.com and press Sync. TweetStash fetches your whole history once, then only what's new. Several X accounts? Each bookmark remembers who saved it.
 • Browse your way: grid or list, newest or oldest first, filter by photos, videos or links, by account, author or tag.

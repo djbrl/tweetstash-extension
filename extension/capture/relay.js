@@ -299,10 +299,12 @@
     if (panel) return;
     panel = document.createElement("div");
     panel.id = "tweet-nest-panel";
-    const logo = (size) => `<svg width="${size}" height="${size}" viewBox="0 0 40 40" aria-hidden="true"><rect width="40" height="40" rx="10" fill="#0a0a0a"/><path d="M13 10h14v20l-7-5-7 5z" fill="#fafafa"/><circle cx="29" cy="11" r="4" fill="#ff5b1f"/></svg>`;
+    const logo = (size) => `<svg width="${size}" height="${size}" viewBox="4 4 32 32" aria-hidden="true"><path d="M8.9 5h22.2v30L20 27.8 8.9 35z" fill="#ff5b1f"/><path d="M20.01 22.97L20.01 22.97Q18.77 22.97 17.76 22.74Q16.75 22.51 16.01 22.03Q15.28 21.56 14.85 20.82Q14.42 20.08 14.34 19.11L14.34 19.11L17.08 18.20Q17.14 19.02 17.55 19.56Q17.95 20.10 18.64 20.36Q19.33 20.63 20.18 20.63L20.18 20.63Q21.00 20.63 21.55 20.42Q22.10 20.22 22.39 19.90Q22.67 19.58 22.67 19.21L22.67 19.21Q22.67 18.78 22.30 18.50Q21.93 18.22 21.29 18.02Q20.65 17.81 19.80 17.62L19.80 17.62Q18.83 17.39 17.90 17.11Q16.96 16.84 16.21 16.41Q15.45 15.97 15.01 15.28Q14.58 14.59 14.58 13.55L14.58 13.55Q14.58 12.36 15.18 11.49Q15.78 10.62 16.94 10.12Q18.11 9.63 19.82 9.63L19.82 9.63Q21.50 9.63 22.69 10.11Q23.87 10.60 24.51 11.46Q25.15 12.32 25.21 13.47L25.21 13.47L22.42 14.26Q22.42 13.70 22.23 13.27Q22.05 12.85 21.72 12.57Q21.39 12.28 20.90 12.14Q20.42 11.99 19.80 11.99L19.80 11.99Q19.06 11.99 18.55 12.17Q18.03 12.34 17.78 12.62Q17.53 12.91 17.53 13.27L17.53 13.27Q17.53 13.74 17.92 14.04Q18.32 14.34 19.01 14.54Q19.70 14.75 20.53 14.94L20.53 14.94Q21.37 15.12 22.26 15.38Q23.15 15.64 23.93 16.07Q24.70 16.49 25.18 17.22Q25.66 17.95 25.66 19.05L25.66 19.05Q25.66 20.24 25.02 21.12Q24.39 22.00 23.13 22.49Q21.87 22.97 20.01 22.97Z" fill="#fff"/></svg>`;
     panel.innerHTML = `
       <style>
         @font-face{font-family:"tweetstash Inter";src:url("${chrome.runtime.getURL("fonts/inter.woff2")}") format("woff2");font-weight:100 900;font-display:swap}
+        @font-face{font-family:"tweetstash Bricolage";src:url("${chrome.runtime.getURL("fonts/bricolage-700.woff2")}") format("woff2");font-weight:700;font-display:swap}
+        #tweet-nest-panel #tn-title{font-family:"tweetstash Bricolage","tweetstash Inter",sans-serif;font-weight:700;letter-spacing:-.02em}
         #tweet-nest-panel{position:fixed;right:20px;bottom:20px;z-index:2147483647;width:400px;box-sizing:border-box;
           font:13px/1.4 "tweetstash Inter",Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#0a0a0a;
           background:#fff;border:1px solid #eaeaea;border-radius:16px;overflow:hidden;

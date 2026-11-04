@@ -1,5 +1,6 @@
 /* Inter ships with the app (SIL Open Font License, see fonts/INTER-LICENSE): no font requests leave your computer. */
 @font-face { font-family: Inter; src: url("fonts/inter.woff2") format("woff2"); font-weight: 100 900; font-display: swap; }
+@font-face { font-family: "Bricolage Grotesque"; src: url("fonts/bricolage-700.woff2") format("woff2"); font-weight: 700; font-display: swap; }
 
 :root {
   --bg: #fafafa;
@@ -99,10 +100,9 @@ a:hover { text-decoration: underline; }
 .brand .logo { transition: transform .2s cubic-bezier(.2,.8,.2,1); }
 .brand:hover .logo { transform: rotate(-6deg) scale(1.05); }
 .logo { width: 32px; height: 32px; flex: none; display: block; }
-.logo .tile { fill: var(--text); }
-.logo .mark { fill: var(--bg); }
-.logo .dot { fill: var(--signal); }
-.brand-name { font-family: "Inter Tight", Inter, sans-serif; font-size: 21px; font-weight: 600; letter-spacing: -.045em; line-height: 1.1; }
+.logo .bm { fill: var(--signal); }
+.logo .s { fill: #fff; }
+.brand-name { font-family: "Bricolage Grotesque", Inter, sans-serif; font-size: 22px; font-weight: 700; letter-spacing: -.03em; line-height: 1.1; }
 .brand-sub { color: var(--muted); font-size: 12px; }
 
 .nav { display: grid; gap: 3px; margin-bottom: 22px; }
