@@ -1,5 +1,14 @@
 // Captures coming in from the browser extension, with live progress per account for the dashboard.
 import { ingest, emptyStash } from "../db/bookmarks.js";
+import { db } from "../db/index.js";
+
+// Whether a full history sync has finished for an account (so later syncs can just fetch what's new).
+const historyKey = (account) => `history-done:${account}`;
+export const historyDone = (account) => !!db.prepare(`SELECT 1 FROM kv WHERE key = ?`).get(historyKey(account));
+export function markHistoryDone(account) {
+  db.prepare(`INSERT OR REPLACE INTO kv (key, value) VALUES (?, ?)`).run(historyKey(account), String(Date.now()));
+  return { ok: true };
+}
 
 export const syncs = Object.create(null); // account -> { pages, seen, added, last }
 
@@ -33,6 +42,8 @@ export function receive(account = "unknown", payload) {
 
 export function empty(account = "") {
   const r = emptyStash(account);
+  if (account) db.prepare(`DELETE FROM kv WHERE key = ?`).run(historyKey(account));
+  else db.exec(`DELETE FROM kv WHERE key LIKE 'history-done:%'`);
   if (account) delete syncs[account];
   else for (const k in syncs) delete syncs[k];
   return r;

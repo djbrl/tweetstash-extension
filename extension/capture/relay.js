@@ -5,8 +5,10 @@
   // known: how many tweetstash already holds for this account (sets the progress bar's scale).
   // catchup: this run only looks for bookmarks newer than the stash (base = stash size at start).
   // upToDateAt: when a page X loaded on its own showed nothing new, so Sync can answer instantly.
+  // historyDone: a full history sync has finished for this account. Until then, having some bookmarks
+  // (X loads its first pages by itself when you open the list) says nothing about the older ones.
   const capture = globalThis.tweetstashCapture;
-  const state = { catchup: false, base: 0, upToDateAt: 0, complete: false, found: new Set(), added: 0, known: 0, progress: null, mode: null, quietPages: 0, lastPageAt: 0, startedAt: 0, error: null, status: "Waiting for bookmarks to load…" };
+  const state = { historyDone: false, catchup: false, base: 0, upToDateAt: 0, complete: false, found: new Set(), added: 0, known: 0, progress: null, mode: null, quietPages: 0, lastPageAt: 0, startedAt: 0, error: null, status: "Waiting for bookmarks to load…" };
   const shown = { found: 0, added: 0 }; // what the counters display, eased toward the real values
   let panel;
   let scrollTimer = null;
@@ -65,6 +67,8 @@
     }
     if (m.type === "fast-done" && state.mode) {
       if (m.error) return finish(`Stopped: ${m.error}`);
+      // Only a finished turbo run covers the whole list (plain sync can stop at X's ~1,000-item limit).
+      if (m.complete) { state.historyDone = true; send({ type: "history-done", account: account() }); }
       finish(!state.catchup ? "Done. Everything's in your stash." : state.added ? savedText() : UP_TO_DATE);
     }
   }
@@ -78,6 +82,7 @@
     state.lastPageAt = Date.now();
     // Pages still in flight when a run ends get stored, but don't move the counter or the card.
     const late = !state.mode && state.complete;
+    const run = state.mode; // which run this page belongs to; its save can finish after the run has ended
     // Count what we found right away; "new" fills in when the app confirms.
     if (!late) {
       (m.ids || idsIn(m.payload)).forEach((id) => state.found.add(id));
@@ -93,15 +98,15 @@
       }
       state.error = null;
       if (late) return;
-      if (state.mode) state.added += r.added;
+      if (run) state.added += r.added;
       else if (r.seen) {
         // X loaded a page on its own (page load / scrolling): store it quietly.
         if (r.added) { state.known += r.added; state.upToDateAt = 0; }
-        else if (state.known) { state.upToDateAt = Date.now(); setStatus(UP_TO_DATE); }
+        else if (state.known && state.historyDone) { state.upToDateAt = Date.now(); setStatus(UP_TO_DATE); }
       }
       // Sync-new mode: X lists newest first, so the first page containing something tweetstash
       // already has means everything below it is already stored.
-      if (state.mode === "fast" && r.added < r.seen) {
+      if (run === "fast" && state.mode === "fast" && state.catchup && r.added < r.seen) {
         stop();
         finish(state.added ? savedText() : UP_TO_DATE);
         state.upToDateAt = Date.now();
@@ -112,11 +117,12 @@
 
   const UP_TO_DATE = "All your bookmarks are already saved.";
   const savedText = () => `Saved ${state.added.toLocaleString()} new bookmark${state.added === 1 ? "" : "s"}.`;
-  const readyText = () => state.upToDateAt ? UP_TO_DATE : state.known ? "Ready. Sync grabs anything new." : "Ready. Sync grabs your whole history.";
+  const readyText = () => state.upToDateAt ? UP_TO_DATE : state.known && state.historyDone ? "Ready. Sync grabs anything new." : "Ready. Sync grabs your whole history.";
 
   function refreshKnown() {
     send({ type: "stats", account: account() }, (r) => {
       state.known = r?.count || 0;
+      state.historyDone = !!r?.historyDone;
       if (!state.mode && state.status.startsWith("Ready")) state.status = readyText(); // the total can land after the status
       render();
     });
@@ -134,11 +140,11 @@
     shown.found = shown.added = 0;
   }
 
-  // Sync: if tweetstash already has this account, only fetch what's new (usually one request).
-  // First time, or "Full", runs Turbo over the whole history.
+  // Sync: once this account's whole history is in, only fetch what's new (usually one request).
+  // Until then (or with "full"), run Turbo over the whole history.
   function startSync(full) {
     resetRun();
-    state.catchup = !full && state.known > 0;
+    state.catchup = !full && state.known > 0 && state.historyDone;
     state.base = state.known;
     shown.found = state.catchup ? state.known : 0;
     // X just showed us its newest page and we had all of it: nothing to fetch.
@@ -149,8 +155,10 @@
     }
     state.mode = state.catchup ? "fast" : "turbo";
     if (state.mode === "turbo") {
-      // What we already know of this account lets turbo skip the probing and cut one-page slices.
-      send({ type: "pagemap", account: account() }, (map) => cmd("turbo", { map }));
+      // Once the whole history is in, what we know lets turbo skip the probing and cut one-page slices.
+      // Before that, the stored bookmarks may be just the newest few, so turbo probes for the bottom.
+      if (state.historyDone) send({ type: "pagemap", account: account() }, (map) => cmd("turbo", { map }));
+      else cmd("turbo", { map: null });
       render();
       return;
     }

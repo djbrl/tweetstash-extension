@@ -150,7 +150,7 @@
     post({ type: "fast-started", turbo: true });
     const seen = new Set();
     const started = performance.now();
-    let pages = 0, budget = 500, resetAt = 0;
+    let pages = 0, budget = 500, resetAt = 0, refused = 0;
     const slices = [];
     const progress = () => {
       if (!slices.length) return 0;
@@ -198,13 +198,15 @@
         head.newest = true;
         slices.push(head);
         for (let i = 0; i < cuts.length; i++) if (cuts[i] > bounds[i + 1]) slices.push({ ...newSlice(cuts[i], bounds[i + 1]), exact: true });
+        // And anything older than the oldest one we know (usually one empty page, confirming the end).
+        slices.push(newSlice(BigInt(map.min), 0n));
       } else {
         // 1. Newest page: the top of the range.
         const first = await get(null);
         if (!first) return post({ type: "fast-failed", reason: "first page refused" });
         emit(first);
         const s0 = tweetSorts(first.json);
-        if (s0.length < 2) return post({ type: "fast-done", pages, unique: seen.size, elapsed: Math.round(performance.now() - started) });
+        if (s0.length < 2) return post({ type: "fast-done", pages, unique: seen.size, elapsed: Math.round(performance.now() - started), turbo: true, complete: true }); // the whole list fits on one page
         const top = s0[0] + 1n;
         const span = s0[0] - s0.at(-1);
 
@@ -264,7 +266,7 @@
           while (next) {
             const r = await next;
             next = null;
-            if (!r) { sl.done = true; break; }
+            if (!r) { sl.done = true; if (fastRunning) refused++; break; }
             const t = performance.now();
             const { ids, sorts } = scan(r.json);
             if (sl.newest && sorts.length) { sl.newest = false; sl.top = sl.at = sorts[0] + 1n; }
@@ -296,7 +298,8 @@
       };
       window.__nestLastRun = timing;
       console.log("[tweet-nest] turbo timing", timing);
-      post({ type: "fast-done", pages, unique: seen.size, elapsed, turbo: true, timing });
+      // complete: every slice was walked to its end (not stopped, nothing refused), so the whole list is in.
+      post({ type: "fast-done", pages, unique: seen.size, elapsed, turbo: true, complete: fastRunning && !refused, timing });
     } catch (e) {
       post({ type: "fast-done", pages, error: String(e.message || e) });
     } finally {

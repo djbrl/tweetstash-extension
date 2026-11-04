@@ -7,7 +7,7 @@ const IS_BOOKMARKS = /^\/i\/api\/graphql\/[^/]+\/(Bookmarks|BookmarkFolderTimeli
 // Explicitly copy only replay headers, never Cookie or arbitrary browser/request credentials.
 const REPLAY_HEADERS = /^(authorization|x-csrf-token|x-twitter-auth-type|x-twitter-active-user|x-twitter-client-language|x-client-transaction-id|accept|content-type)$/i;
 const DASHBOARD = chrome.runtime.getURL("dashboard/index.html");
-const CAPTURE_ROUTES = new Set(["POST /api/ingest", "GET /api/pagemap", "GET /api/capture/status"]);
+const CAPTURE_ROUTES = new Set(["POST /api/ingest", "GET /api/pagemap", "GET /api/capture/status", "POST /api/capture/history-done"]);
 
 function isX(url) {
   try { return ["https://x.com", "https://twitter.com"].includes(new URL(url).origin); }
@@ -77,6 +77,10 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   if (msg.type === "open-app") { openDashboard(); return; }
   if (msg.type === "ingest") {
     capture("POST", "/api/ingest", { account: msg.account, payload: msg.payload });
+    return true;
+  }
+  if (msg.type === "history-done") {
+    capture("POST", "/api/capture/history-done", { account: msg.account });
     return true;
   }
   if (msg.type === "pagemap" || msg.type === "stats") {

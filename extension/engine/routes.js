@@ -8,7 +8,7 @@ import { settings, publicSettings, updateSettings, setApiKey, removeApiKey } fro
 import { job, startTagging, stopTagging } from "./services/tagging.js";
 import { search } from "./services/search.js";
 import { tidyTags } from "./services/tag-tidy.js";
-import { syncs, receive, empty, validateAccount } from "./services/sync.js";
+import { syncs, receive, empty, validateAccount, historyDone, markHistoryDone } from "./services/sync.js";
 
 export const routes = {
   // ---------- browsing ----------
@@ -31,8 +31,9 @@ export const routes = {
   "GET /api/pagemap": (body, url) => pageMap(validateAccount(url.searchParams.get("account"))),
   "GET /api/capture/status": (body, url) => {
     const account = validateAccount(url.searchParams.get("account"));
-    return { count: stats().accounts.find((a) => a.name === account)?.n || 0 };
+    return { count: stats().accounts.find((a) => a.name === account)?.n || 0, historyDone: historyDone(account) };
   },
+  "POST /api/capture/history-done": (body) => markHistoryDone(validateAccount(body.account)),
   "POST /api/empty": (body) => empty(body.account),
 
   // ---------- AI tagging ----------
@@ -52,4 +53,4 @@ export const routes = {
 };
 
 // Which routes each caller may use. X tabs are untrusted pages: their content script only gets capture.
-export const CAPTURE_ROUTES = new Set(["POST /api/ingest", "GET /api/pagemap", "GET /api/capture/status"]);
+export const CAPTURE_ROUTES = new Set(["POST /api/ingest", "GET /api/pagemap", "GET /api/capture/status", "POST /api/capture/history-done"]);
