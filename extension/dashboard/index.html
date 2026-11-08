@@ -99,12 +99,11 @@
     <div class="empty" id="empty" hidden>
       <svg class="logo empty-art" viewBox="4 4 32 32" aria-hidden="true"><path class="bm" d="M8.9 5h22.2v30L20 27.8 8.9 35z"/><path class="s" d="M20.01 22.97L20.01 22.97Q18.77 22.97 17.76 22.74Q16.75 22.51 16.01 22.03Q15.28 21.56 14.85 20.82Q14.42 20.08 14.34 19.11L14.34 19.11L17.08 18.20Q17.14 19.02 17.55 19.56Q17.95 20.10 18.64 20.36Q19.33 20.63 20.18 20.63L20.18 20.63Q21.00 20.63 21.55 20.42Q22.10 20.22 22.39 19.90Q22.67 19.58 22.67 19.21L22.67 19.21Q22.67 18.78 22.30 18.50Q21.93 18.22 21.29 18.02Q20.65 17.81 19.80 17.62L19.80 17.62Q18.83 17.39 17.90 17.11Q16.96 16.84 16.21 16.41Q15.45 15.97 15.01 15.28Q14.58 14.59 14.58 13.55L14.58 13.55Q14.58 12.36 15.18 11.49Q15.78 10.62 16.94 10.12Q18.11 9.63 19.82 9.63L19.82 9.63Q21.50 9.63 22.69 10.11Q23.87 10.60 24.51 11.46Q25.15 12.32 25.21 13.47L25.21 13.47L22.42 14.26Q22.42 13.70 22.23 13.27Q22.05 12.85 21.72 12.57Q21.39 12.28 20.90 12.14Q20.42 11.99 19.80 11.99L19.80 11.99Q19.06 11.99 18.55 12.17Q18.03 12.34 17.78 12.62Q17.53 12.91 17.53 13.27L17.53 13.27Q17.53 13.74 17.92 14.04Q18.32 14.34 19.01 14.54Q19.70 14.75 20.53 14.94L20.53 14.94Q21.37 15.12 22.26 15.38Q23.15 15.64 23.93 16.07Q24.70 16.49 25.18 17.22Q25.66 17.95 25.66 19.05L25.66 19.05Q25.66 20.24 25.02 21.12Q24.39 22.00 23.13 22.49Q21.87 22.97 20.01 22.97Z"/></svg>
       <h2>Your stash is empty</h2>
-      <p>Install the capture extension, open your X bookmarks, and hit <b>Sync all</b>. Bookmarks show up here as they're captured.</p>
+      <p>Open your X bookmarks and click <b>Sync</b>. They show up here as they come in.</p>
       <ol>
-        <li>Chrome → <code>chrome://extensions</code> → turn on <b>Developer mode</b></li>
-        <li><b>Load unpacked</b> → pick <code>~/tweet-nest/extension</code></li>
-        <li>Open <a href="https://x.com/i/bookmarks" target="_blank" rel="noopener">x.com/i/bookmarks</a> → <b>Sync</b> in the panel</li>
-        <li>Switch X accounts and repeat for your second account</li>
+        <li>Open <a href="https://x.com/i/bookmarks" target="_blank" rel="noopener">x.com/i/bookmarks</a> → <b>Sync</b> in the panel at the bottom right</li>
+        <li>Optional: for AI tagging and description search, add an Anthropic API key in <button class="linkish" type="button" data-open-settings>Settings</button></li>
+        <li>Back up, restore or empty your stash anytime from <button class="linkish" type="button" data-open-settings>Settings</button></li>
       </ol>
     </div>
 
@@ -140,7 +139,7 @@
       <section class="set-sec">
         <h3>AI provider API key</h3>
         <p class="set-help">Needed for AI tagging and description search; everything else works without it. Get a key from your AI provider's console (for Claude: <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">console.anthropic.com</a>).</p>
-        <p class="set-help">It's saved only on this computer, in <code>~/tweet-nest/.env</code>, readable by your user account only, and never shown again after you save it. Never share this key: anyone who has it can spend money on your account.</p>
+        <p class="set-help">It's saved only in this browser, with the rest of your stash, and never shown again after you save it. Never share this key: anyone who has it can spend money on your account.</p>
         <div class="key-ok" id="key-ok" hidden><i class="dot"></i><span>Key saved <code id="key-hint"></code></span><button class="btn" id="key-replace" type="button">Replace</button><button class="btn" id="key-remove" type="button">Remove</button></div>
         <form class="key-form" id="key-form" hidden autocomplete="off">
           <input type="password" id="key-input" placeholder="sk-ant-…" autocomplete="off" spellcheck="false" aria-label="Anthropic API key">
@@ -190,7 +189,7 @@
         <h3>Data</h3>
         <p class="set-help">Your stash lives only in this browser. <b>Uninstalling the extension deletes it</b>, so download a backup now and then.</p>
         <div class="set-row"><span class="set-label">Back up everything<small class="set-help" style="display:block;font-weight:400">One file with every bookmark, tag and AI description.</small></span><button class="btn" id="set-backup" type="button">Download backup</button></div>
-        <div class="set-row"><span class="set-label">Restore a backup<small class="set-help" style="display:block;font-weight:400">Merges it into what's here; nothing is deleted. Also reads exports from the TweetStash app.</small></span><button class="btn" id="set-restore" type="button">Restore…</button><input type="file" id="restore-file" accept=".json,application/json" hidden></div>
+        <div class="set-row"><span class="set-label">Restore a backup<small class="set-help" style="display:block;font-weight:400">Merges it into what's here; nothing is deleted.</small></span><button class="btn" id="set-restore" type="button">Restore…</button><input type="file" id="restore-file" accept=".json,application/json" hidden></div>
         <div class="set-row"><span class="set-label">Export as JSON<small class="set-help" style="display:block;font-weight:400">A readable list of bookmarks with their tags, for use elsewhere.</small></span><button class="btn" id="set-export" type="button">Export</button></div>
       </section>
     </div>

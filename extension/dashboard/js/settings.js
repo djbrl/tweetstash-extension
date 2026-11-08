@@ -186,6 +186,7 @@ const onPick = (sel, attr, fn) => ($(sel).onclick = (e) => { const b = e.target.
 
 export function initSettings() {
   const dlg = $("#settings-dlg");
+  document.addEventListener("click", (e) => { if (e.target.closest("[data-open-settings]")) $("#settings-btn").click(); });
   $("#settings-btn").onclick = async () => {
     await loadSettings();
     keyEditing = false;
