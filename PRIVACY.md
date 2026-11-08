@@ -1,6 +1,6 @@
 # TweetStash privacy policy
 
-Last updated: 04 November 2026
+Last updated: 08 November 2026
 
 TweetStash is a Chrome extension that saves your X (Twitter) bookmarks into a library inside your
 browser, so you can browse, tag and search them.
@@ -25,6 +25,10 @@ extension deletes it.
   processed under [Anthropic's terms and privacy policy](https://www.anthropic.com/legal/privacy). You
   can remove your key at any time in Settings.
 - Images in your library are loaded from X's image servers (pbs.twimg.com), as they are on X.
+- **Hugging Face, for a one-time download only.** If you tag on this computer (the free option), TweetStash
+  downloads an image-recognition model (CLIP) from Hugging Face (https://huggingface.co) the first time,
+  and the browser keeps it. Nothing about you or your bookmarks is sent: it's a plain file download, and
+  the tagging itself runs entirely in your browser. You can delete the model in Settings.
 
 Your X cookies and password are never read, stored or sent anywhere. TweetStash doesn't sell or transfer
 your data, and doesn't use it for anything except showing you your own library.

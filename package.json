@@ -1,6 +1,6 @@
 {
   "name": "tweetstash-extension",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "license": "MIT",
   "description": "TweetStash as a Chrome extension only: your X bookmarks, AI tagging and description search, with no server.",
@@ -11,6 +11,7 @@
   },
   "devDependencies": {
     "@anthropic-ai/sdk": "^1.4.0",
+    "@huggingface/transformers": "^4.3.2",
     "@sqlite.org/sqlite-wasm": "^3.54.1-build1",
     "esbuild": "^0.28.2"
   }

@@ -102,7 +102,7 @@
       <p>Open your X bookmarks and click <b>Sync</b>. They show up here as they come in.</p>
       <ol>
         <li>Open <a href="https://x.com/i/bookmarks" target="_blank" rel="noopener">x.com/i/bookmarks</a> → <b>Sync</b> in the panel at the bottom right</li>
-        <li>Optional: for AI tagging and description search, add an Anthropic API key in <button class="linkish" type="button" data-open-settings>Settings</button></li>
+        <li>Click <b>Tag</b> at the top to sort them into categories, free, on this computer. For better tags and description search, add an Anthropic API key in <button class="linkish" type="button" data-open-settings>Settings</button></li>
         <li>Back up, restore or empty your stash anytime from <button class="linkish" type="button" data-open-settings>Settings</button></li>
       </ol>
     </div>
@@ -138,7 +138,7 @@
 
       <section class="set-sec">
         <h3>AI provider API key</h3>
-        <p class="set-help">Needed for AI tagging and description search; everything else works without it. Get a key from your AI provider's console (for Claude: <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">console.anthropic.com</a>).</p>
+        <p class="set-help">Needed for tagging with Claude and for description search; everything else works without it. Get a key from your AI provider's console (for Claude: <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">console.anthropic.com</a>).</p>
         <p class="set-help">It's saved only in this browser, with the rest of your stash, and never shown again after you save it. Never share this key: anyone who has it can spend money on your account.</p>
         <div class="key-ok" id="key-ok" hidden><i class="dot"></i><span>Key saved <code id="key-hint"></code></span><button class="btn" id="key-replace" type="button">Replace</button><button class="btn" id="key-remove" type="button">Remove</button></div>
         <form class="key-form" id="key-form" hidden autocomplete="off">
@@ -149,13 +149,22 @@
       </section>
 
       <section class="set-sec">
-        <h3>AI tagging</h3>
-        <p class="set-help">Sorts each bookmark into a category and gives it a few tags. Pick a model by how specific you need the tags to be; prices are per 5,000 bookmarks.</p>
-        <div class="model-list" id="tag-models"></div>
-        <div class="set-row"><span class="set-label">Effort <small class="set-help" style="display:block;font-weight:400">Low fits most stashes. Medium and high make the chosen model more careful and accurate, but slower and pricier.</small></span>
-          <div class="seg" id="tag-effort"></div>
+        <h3>Tagging</h3>
+        <p class="set-help">Sorts each bookmark into a category and gives it tags.</p>
+        <div class="model-list" id="tagger-opts"></div>
+        <div class="local-box" id="local-box" hidden>
+          <div class="set-est" id="local-status"></div>
+          <button class="btn" id="local-remove" type="button" hidden>Delete the model</button>
         </div>
-        <div class="set-est" id="tag-est"></div>
+        <div id="claude-box" hidden>
+          <p class="set-help" id="claude-nokey" hidden>Add your API key above to tag with Claude.</p>
+          <p class="set-help">Pick a Claude model by how specific you need the tags to be; prices are per 5,000 bookmarks.</p>
+          <div class="model-list" id="tag-models"></div>
+          <div class="set-row"><span class="set-label">Effort <small class="set-help" style="display:block;font-weight:400">Low fits most stashes. Medium and high make the chosen model more careful and accurate, but slower and pricier.</small></span>
+            <div class="seg" id="tag-effort"></div>
+          </div>
+          <div class="set-est" id="tag-est"></div>
+        </div>
       </section>
 
       <section class="set-sec">

@@ -10,6 +10,7 @@ const DEFAULTS = {
   searchModel: "claude-opus-5-5",
   searchEffort: "low",
   hideNsfw: false,
+  tagger: null, // "local" (CLIP in the browser, free) or "claude" (needs a key); unset: Claude if there's a key
   // Average tokens actually used, per "model|effort": { n, input, output } (per post / per search).
   measuredTag: {},
   measuredSearch: {},
@@ -23,6 +24,7 @@ let current = { ...DEFAULTS };
 try { current = { ...DEFAULTS, ...JSON.parse(read("settings") || "{}") }; } catch {}
 
 export const settings = () => current;
+export const tagger = () => current.tagger || (apiKey() ? "claude" : "local");
 export const apiKey = () => read("anthropic_api_key") || "";
 
 const save = () => write("settings", JSON.stringify(current));
@@ -34,6 +36,7 @@ export function updateSettings(patch = {}) {
   if (EFFORTS.includes(patch.tagEffort)) current.tagEffort = patch.tagEffort;
   if (EFFORTS.includes(patch.searchEffort)) current.searchEffort = patch.searchEffort;
   if (typeof patch.hideNsfw === "boolean") current.hideNsfw = patch.hideNsfw;
+  if (patch.tagger === "local" || patch.tagger === "claude") current.tagger = patch.tagger;
   save();
   return publicSettings();
 }
@@ -57,7 +60,7 @@ export function recordUsage(kind, model, effort, count, usage) {
 // What the browser may see: everything except the key itself.
 export function publicSettings() {
   const key = apiKey();
-  return { ...current, models: MODELS, efforts: EFFORTS, hasKey: !!key, keyHint: key ? "…" + key.slice(-4) : "" };
+  return { ...current, tagger: tagger(), models: MODELS, efforts: EFFORTS, hasKey: !!key, keyHint: key ? "…" + key.slice(-4) : "" };
 }
 
 // ---------- API key ----------

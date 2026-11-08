@@ -487,3 +487,5 @@ mark { background: var(--signal-soft); color: inherit; border-radius: 3px; paddi
 .merge-list { margin: 0 0 12px; padding-left: 18px; max-height: 40vh; overflow: auto; color: var(--text); }
 .merge-list code { font: 12.5px var(--mono); }
 .empty .linkish { border: 0; background: none; padding: 0; font: inherit; color: var(--text); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.local-box { display: flex; align-items: center; gap: 12px; justify-content: space-between; }
+.local-box .btn { flex: none; }

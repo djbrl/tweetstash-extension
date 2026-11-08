@@ -66,7 +66,11 @@ async function onButtonClick() {
   if (failed && !job.fatal) return startTagging({ failed: true });
   if (untagged) return startTagging({});
   const s = state.settings;
-  const ok = await confirmDialog({
+  const ok = await confirmDialog(s?.tagger === "local" ? {
+    title: "Re-tag everything?",
+    body: `The local model re-sorts all <b>${total.toLocaleString()} bookmarks</b> and replaces their automatic tags and categories. Tags you added yourself are kept. It's free.`,
+    ok: "Re-tag all",
+  } : {
     title: "Re-tag everything?",
     body: `AI re-reads all <b>${total.toLocaleString()} bookmarks</b> and replaces their AI tags and categories. Tags you added yourself are kept. With your settings (${esc(modelLabel(s?.tagModel))}, ${s?.tagEffort} effort) that costs about <b>${money(tagEstimate(total))}</b>.`,
     ok: "Re-tag all",
@@ -141,8 +145,13 @@ function renderPanel() {
     row.classList.remove("in"); void row.offsetWidth; row.classList.add("in"); // restart the slide-in
   }
 
-  const eta = job.running && n > 0 && !job.stopping ? fmtDuration((secs / n) * (job.total - n)) : "";
-  $("#tp-status").textContent = job.running
+  const since = ((job.finishedAt || Date.now()) - (job.loadedAt || job.startedAt)) / 1000; // not counting a model download
+  const eta = job.running && n > 0 && !job.stopping ? fmtDuration((since / n) * (job.total - n)) : "";
+  const dl = job.download;
+  $("#tp-status").textContent = job.running && dl?.total && dl.loaded < dl.total
+    ? `Downloading the tagging model, one time only… ${Math.round((dl.loaded / dl.total) * 100)}%`
+    : job.running && job.model === "local" && n === 0 && !job.stopping ? "Loading the tagging model…"
+    : job.running
     ? job.stopping ? "Finishing the batches in flight…" : eta ? `About ${eta} left` : "Starting…"
     : job.fatal ? job.error
     : stopped ? `Stopped after ${job.done.toLocaleString()}. The rest are unchanged.`

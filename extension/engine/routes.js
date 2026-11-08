@@ -7,6 +7,7 @@ import { backupAll, importBackup } from "./db/backup.js";
 import { settings, publicSettings, updateSettings, setApiKey, removeApiKey } from "./services/settings.js";
 import { job, startTagging, stopTagging } from "./services/tagging.js";
 import { search } from "./services/search.js";
+import { model, modelInfo, loadModel, removeModel } from "./services/local.js";
 import { tidyTags } from "./services/tag-tidy.js";
 import { syncs, receive, empty, validateAccount, historyDone, markHistoryDone } from "./services/sync.js";
 
@@ -40,6 +41,11 @@ export const routes = {
   "POST /api/tagging/start": (body) => startTagging(body),
   "POST /api/tagging/stop": () => stopTagging(),
   "POST /api/tags/tidy": (body) => tidyTags(body),
+
+  // ---------- the local tagger's model ----------
+  "GET /api/local-model": () => modelInfo(),
+  "POST /api/local-model/download": () => { loadModel().catch(() => {}); return model; },
+  "POST /api/local-model/remove": () => removeModel(),
 
   // ---------- search ----------
   // The dashboard's Stop button aborts the AI calls so they aren't billed further.

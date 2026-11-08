@@ -1,6 +1,6 @@
 # Chrome Web Store submission
 
-Dashboard: https://chrome.google.com/webstore/devconsole → **New item** → upload `tweetstash-0.1.0.zip`.
+Dashboard: https://chrome.google.com/webstore/devconsole → **New item** → upload `tweetstash-0.1.1.zip` (for an update: open the item → **Package** → **Upload new package**).
 Then fill each tab below. Every field you need is here, ready to paste.
 
 ## Store listing tab
@@ -13,8 +13,9 @@ Search the posts you saved on X. Keyword search, automatic tags and picture sear
 • Sync in one click: open your bookmarks on x.com and press Sync. TweetStash fetches your whole history once, then only what's new. Several X accounts? Each bookmark remembers who saved it.
 • Browse your way: grid or list, newest or oldest first, filter by photos, videos or links, by account, author or tag.
 • Instant keyword search across post text, authors and tags.
-• Optional AI, with your own Anthropic API key: automatic tags and categories for every bookmark, and "describe it" search: type "that blue isometric city illustration" and get the post back, pictures included.
-• Private by design: no server, no account, no tracking. Your library lives only in this browser. AI features talk straight to Anthropic with your key, and only when you use them.
+• Free automatic tagging on your computer: an image-recognition model sorts every bookmark into a category, with nothing sent anywhere.
+• Better tags with Claude, using your own Anthropic API key: it recognizes games, characters, shows and art styles. Plus "describe it" search: type "that blue isometric city illustration" and get the post back, pictures included.
+• Private by design: no server, no account, no tracking. Your library lives only in this browser. Claude features talk straight to Anthropic with your key, and only when you use them.
 • Backup and restore to a file at any time.
 
 Open source: https://github.com/djbrl/tweetstash-extension
@@ -48,7 +49,7 @@ Save the user's X (Twitter) bookmarks into a private library inside the browser,
 | Host: pbs.twimg.com | Loads the bookmarks' images in the library, and makes small copies for AI tagging when the user turns it on. |
 | Host: api.anthropic.com | Optional AI tagging and description search, sent with the user's own Anthropic API key, only when they use those features. |
 
-**Remote code:** No, I am not using remote code. (Everything, including SQLite and the Anthropic SDK, is bundled in the package.)
+**Remote code:** No, I am not using remote code. (All code, including SQLite, the Anthropic SDK, Transformers.js and its ONNX runtime, is bundled in the package. The free tagger downloads model weights, plain data files, from huggingface.co on first use; no code is downloaded.)
 
 **Data usage:** tick **Website content** (bookmarked posts' text and images, sent to Anthropic only when the user turns on AI features). Tick all three certifications:
 - I do not sell or transfer user data to third parties, outside of the approved use cases
@@ -66,5 +67,5 @@ Save the user's X (Twitter) bookmarks into a private library inside the browser,
 ## Test instructions (for the reviewer, if asked)
 
 ```
-No account or key is needed to test capture and browsing. Sign in to any X account that has a few bookmarks, open https://x.com/i/bookmarks and click Sync in the TweetStash panel at the bottom right. Click the toolbar icon to open the library. AI features need the user's own Anthropic API key (Settings) and are optional.
+No account or key is needed to test capture, browsing and tagging. Sign in to any X account that has a few bookmarks, open https://x.com/i/bookmarks and click Sync in the TweetStash panel at the bottom right. Click the toolbar icon to open the library. Click Tag in the toolbar to tag them on the computer (a one-time model download from Hugging Face). Claude tagging and description search need the user's own Anthropic API key (Settings) and are optional.
 ```

@@ -73,6 +73,16 @@ function renderSettings() {
   $("#key-form").hidden = s.hasKey && !keyEditing;
   $("#key-hint").textContent = s.keyHint;
 
+  const claudeCost = estimate("tag", s.tagModel, s.tagEffort, 5000).cost;
+  $("#tagger-opts").innerHTML = [
+    ["local", "On this computer", "Free, and nothing leaves your browser. Picks the category and the tags it can read in the post. Less accurate.", "Free"],
+    ["claude", "Claude", "Hosted by Anthropic. Much better tags: recognizes games, characters, shows and art styles. Needs an API key.", money(claudeCost) + "<small>per 5,000</small>"],
+  ].map(([v, title, note, price]) => `<button type="button" class="model-opt ${s.tagger === v ? "on" : ""}" data-tagger="${v}">
+      <i class="radio"></i><span><b>${title}</b><small>${note}</small></span><span class="price">${price}</span></button>`).join("");
+  $("#local-box").hidden = s.tagger !== "local";
+  $("#claude-box").hidden = s.tagger !== "claude";
+  $("#claude-nokey").hidden = s.hasKey;
+  if (s.tagger === "local") renderLocalModel();
   $("#tag-models").innerHTML = modelOptions("tag", s.tagModel, s.tagEffort, 5000, "per 5,000");
   $("#search-models").innerHTML = modelOptions("search", s.searchModel, s.searchEffort, 1, "per search");
   $("#tag-effort").innerHTML = segHtml(s.efforts, s.tagEffort);
@@ -87,6 +97,19 @@ function renderSettings() {
 
   $("#set-nsfw").checked = s.hideNsfw;
   $("#set-voice").value = store.get("tweetstash-voice-lang", "en-US");
+}
+
+// The local model: downloaded or not, and how fast it'll be here.
+async function renderLocalModel() {
+  let m;
+  try { m = await api("/api/local-model"); } catch { return; }
+  const speed = m.gpu ? "It uses your graphics card: about 10 minutes per 5,000 bookmarks."
+    : "No graphics card was found, so it runs on the processor: about 1.5 hours per 5,000 bookmarks.";
+  $("#local-status").textContent = m.state === "loading" && m.total
+    ? `Downloading the model… ${Math.round((m.loaded / m.total) * 100)}%`
+    : m.downloaded ? `Model downloaded (${m.mb} MB). ${speed}`
+    : `The model downloads once (${m.mb} MB) the first time you tag. ${speed}`;
+  $("#local-remove").hidden = !m.downloaded;
 }
 
 async function saveSettings(patch) {
@@ -201,6 +224,13 @@ export function initSettings() {
   });
 
   onPick("#set-theme", "v", setTheme);
+  onPick("#tagger-opts", "tagger", (v) => saveSettings({ tagger: v }));
+  $("#local-remove").onclick = async () => {
+    const ok = await confirmDialog({ title: "Delete the tagging model?", body: "Your tags stay. The model downloads again the next time you tag on this computer.", ok: "Delete model", danger: true });
+    if (!ok) return;
+    try { await api("/api/local-model/remove", {}); } catch (e) { toast(e.message); }
+    renderLocalModel();
+  };
   onPick("#tag-models", "model", (m) => saveSettings({ tagModel: m }));
   onPick("#search-models", "model", (m) => saveSettings({ searchModel: m }));
   onPick("#tag-effort", "v", (v) => saveSettings({ tagEffort: v }));

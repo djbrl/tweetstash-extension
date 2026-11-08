@@ -1,12 +1,16 @@
-// AI tagging: sends batches of posts (text + first image) to Claude and stores a category, tags,
-// subjects, medium, NSFW level and a one-line picture description for each.
+// Tagging, with one of two taggers (Settings):
+//  - local: CLIP on this computer (local.js). Free, nothing leaves the browser, a category, medium and
+//    the tags it can find in the words. Less accurate.
+//  - claude: sends batches of posts (text + first image) to Claude and stores a category, tags, subjects,
+//    medium, NSFW level and a one-line picture description for each. Needs an API key; better.
 // One job runs at a time; the dashboard polls `job` for progress.
 import { idsToTag, tweetsByIds } from "../db/bookmarks.js";
 import { applyAiTags, topTags, markTagFailed, markRefused } from "../db/tags.js";
 import { TAG_SCHEMA, TAG_SYSTEM, tagInput } from "../prompts/tagging.js";
 import { Anthropic, getClient, jsonRequest, jsonAnswer, billedTokens, Refused } from "./anthropic.js";
 import { fetchImage, smallImage, firstThumb } from "./images.js";
-import { settings, recordUsage } from "./settings.js";
+import { settings, recordUsage, tagger } from "./settings.js";
+import { loadModel, tagOne, saveResult, vocabulary, fetchPicture, model as localModel } from "./local.js";
 
 const BATCH = 25;
 const CONCURRENCY = 4;
@@ -86,6 +90,7 @@ export function startTagging({ all = false, failed = false, limit = 0, ids: only
   if (job.running) return job;
   let ids = Array.isArray(only) ? only.map(String) : idsToTag(all, failed);
   if (limit > 0) ids = ids.slice(0, limit);
+  if (tagger() === "local") return startLocal(ids);
   const { tagModel, tagEffort } = settings();
   Object.assign(job, {
     model: tagModel, effort: tagEffort, running: true, stopping: false, stoppedByUser: false, fatal: false,
@@ -128,6 +133,58 @@ export function startTagging({ all = false, failed = false, limit = 0, ids: only
     job.stopping = false;
     job.finishedAt = Date.now();
     recordUsage("tag", job.model, job.effort, job.done, job.usage); // per-post averages for Settings' estimates
+  });
+  return job;
+}
+
+// ---------- the local tagger ----------
+
+// One post at a time (the model uses this worker's CPU); new tags show up as it goes.
+function startLocal(ids) {
+  Object.assign(job, {
+    model: "local", effort: null, running: true, stopping: false, stoppedByUser: false, fatal: false,
+    total: ids.length, done: 0, failed: 0, failedIds: [], refused: 0, error: null, last: null,
+    startedAt: Date.now(), loadedAt: null, finishedAt: null, usage: { input: 0, output: 0 },
+  });
+  (async () => {
+    try {
+      job.download = localModel; // the dashboard shows its progress the first time
+      await loadModel();
+      job.download = null;
+      job.loadedAt = Date.now(); // the time estimate starts here, not at the download
+    } catch (err) {
+      job.download = null;
+      job.error = "Couldn't load the local model: " + (err?.message || err);
+      job.fatal = true;
+      return;
+    }
+    const vocab = vocabulary();
+    for (let i = 0; i < ids.length && !job.stopping; i += 20) {
+      const rows = tweetsByIds(ids.slice(i, i + 20));
+      // Pictures download 4 at a time while the model works through the posts in order.
+      const pictures = new Array(rows.length);
+      let next = 0;
+      const fetchNext = () => { if (next < rows.length) { const k = next++; pictures[k] = fetchPicture(rows[k]).finally(fetchNext); } };
+      for (let k = 0; k < 4; k++) fetchNext();
+      for (const [k, row] of rows.entries()) {
+        if (job.stopping) break;
+        try {
+          while (!pictures[k]) await new Promise((res) => setTimeout(res, 10));
+          const r = await tagOne(row, vocab, pictures[k]);
+          saveResult(r);
+          job.done++;
+          job.last = { text: (row.text || "").replace(/https:\/\/t\.co\/\S+/g, "").trim().slice(0, 140), category: r.category, tags: r.tags.slice(0, 4), thumb: smallImage(firstThumb(row)) };
+        } catch (err) {
+          job.failed++;
+          job.failedIds.push(row.id);
+          markTagFailed([row.id], err?.message || String(err));
+        }
+      }
+    }
+  })().finally(() => {
+    job.running = false;
+    job.stopping = false;
+    job.finishedAt = Date.now();
   });
   return job;
 }
