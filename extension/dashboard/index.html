@@ -128,79 +128,75 @@
 
   <dialog class="dlg settings-dlg" id="settings-dlg" aria-labelledby="set-title">
     <div class="set-head"><h2 id="set-title">Settings</h2><button class="tp-x" id="set-close" type="button" aria-label="Close">×</button></div>
-    <div class="set-body">
-      <section class="set-sec">
-        <h3>Appearance</h3>
-        <div class="set-row"><span class="set-label">Theme</span>
-          <div class="seg" id="set-theme"><button type="button" data-v="system">System</button><button type="button" data-v="light">Light</button><button type="button" data-v="dark">Dark</button></div>
-        </div>
-      </section>
-
-      <section class="set-sec">
-        <h3>AI provider API key</h3>
-        <p class="set-help">Needed for tagging with Claude and for description search; everything else works without it. Get a key from your AI provider's console (for Claude: <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">console.anthropic.com</a>).</p>
-        <p class="set-help">It's saved only in this browser, with the rest of your stash, and never shown again after you save it. Never share this key: anyone who has it can spend money on your account.</p>
-        <div class="key-ok" id="key-ok" hidden><i class="dot"></i><span>Key saved <code id="key-hint"></code></span><button class="btn" id="key-replace" type="button">Replace</button><button class="btn" id="key-remove" type="button">Remove</button></div>
-        <form class="key-form" id="key-form" hidden autocomplete="off">
-          <input type="password" id="key-input" placeholder="sk-ant-…" autocomplete="off" spellcheck="false" aria-label="Anthropic API key">
-          <button class="btn primary" id="key-save" type="submit">Save key</button>
-        </form>
-        <div class="key-msg" id="key-msg"></div>
-      </section>
-
-      <section class="set-sec">
-        <h3>Tagging</h3>
-        <p class="set-help">Sorts each bookmark into a category and gives it tags.</p>
-        <div class="model-list" id="tagger-opts"></div>
-        <div class="local-box" id="local-box" hidden>
-          <div class="set-est" id="local-status"></div>
-          <button class="btn" id="local-remove" type="button" hidden>Delete the model</button>
-        </div>
-        <div id="claude-box" hidden>
-          <p class="set-help" id="claude-nokey" hidden>Add your API key above to tag with Claude.</p>
-          <p class="set-help">Pick a Claude model by how specific you need the tags to be; prices are per 5,000 bookmarks.</p>
-          <div class="model-list" id="tag-models"></div>
-          <div class="set-row"><span class="set-label">Effort <small class="set-help" style="display:block;font-weight:400">Low fits most stashes. Medium and high make the chosen model more careful and accurate, but slower and pricier.</small></span>
-            <div class="seg" id="tag-effort"></div>
+    <div class="set-wrap">
+      <nav class="set-nav" id="set-nav" aria-label="Settings sections">
+        <button type="button" data-sec="general" class="on">General</button>
+        <button type="button" data-sec="tagging">Tagging</button>
+        <button type="button" data-sec="search">Search</button>
+        <button type="button" data-sec="key">API key</button>
+        <button type="button" data-sec="data">Data</button>
+      </nav>
+      <div class="set-body">
+        <section class="set-sec" data-sec="general">
+          <h3>General</h3>
+          <div class="set-row"><span class="set-label">Theme</span>
+            <div class="seg" id="set-theme"><button type="button" data-v="system">System</button><button type="button" data-v="light">Light</button><button type="button" data-v="dark">Dark</button></div>
           </div>
-          <div class="set-est" id="tag-est"></div>
-        </div>
-      </section>
+          <div class="set-row"><label for="set-nsfw">Hide NSFW &amp; Thirst from All bookmarks</label>
+            <span class="switch"><input type="checkbox" id="set-nsfw"><span></span></span>
+          </div>
+          <div class="set-row"><label for="set-voice">Voice search language</label>
+            <select id="set-voice">
+              <option value="en-US">English (US)</option><option value="en-GB">English (UK)</option><option value="fr-FR">Français</option>
+              <option value="es-ES">Español</option><option value="pt-BR">Português (BR)</option><option value="de-DE">Deutsch</option>
+              <option value="ja-JP">日本語</option><option value="ko-KR">한국어</option><option value="ar-SA">العربية</option>
+            </select>
+          </div>
+        </section>
 
-      <section class="set-sec">
-        <h3>Description search</h3>
-        <p class="set-help">Finds a bookmark from a description in your own words. Each search reads a shortlist of likely matches, images included.</p>
-        <div class="model-list" id="search-models"></div>
-        <div class="set-row"><span class="set-label">Effort <small class="set-help" style="display:block;font-weight:400">Low fits most searches. Medium and high take more care with vague descriptions, but are slower and pricier.</small></span><div class="seg" id="search-effort"></div></div>
-        <div class="set-est" id="search-est"></div>
-      </section>
+        <section class="set-sec" data-sec="tagging" hidden>
+          <h3>Tagging</h3>
+          <div class="model-list" id="tagger-opts"></div>
+          <div class="local-box" id="local-box" hidden>
+            <div class="set-est" id="local-status"></div>
+            <button class="btn" id="local-remove" type="button" hidden>Delete model</button>
+          </div>
+          <div class="claude-box" id="claude-box" hidden>
+            <p class="set-help" id="claude-nokey" hidden>Add your <button class="linkish" type="button" data-goto="key">API key</button> to tag with Claude.</p>
+            <div class="model-list" id="tag-models"></div>
+            <div class="set-row"><span class="set-label">Effort</span><div class="seg" id="tag-effort"></div></div>
+            <div class="set-est" id="tag-est"></div>
+          </div>
+          <div class="set-row"><span class="set-label">Tidy tags<small class="set-help">Merges duplicates like "drawing" and "drawings". About 20¢.</small></span><button class="btn" id="tidy-btn" type="button">Tidy tags</button></div>
+        </section>
 
-      <section class="set-sec">
-        <h3>Tags</h3>
-        <div class="set-row"><span class="set-label">Tidy tags<small class="set-help" style="display:block;font-weight:400">Merges duplicate tags ("drawing" and "drawings") so filters and search find everything. Shows the changes before applying them. About 20¢.</small></span><button class="btn" id="tidy-btn" type="button">Tidy tags</button></div>
-      </section>
+        <section class="set-sec" data-sec="search" hidden>
+          <h3>Description search</h3>
+          <p class="set-help">Find a post by describing it. Needs your <button class="linkish" type="button" data-goto="key">API key</button>.</p>
+          <div class="model-list" id="search-models"></div>
+          <div class="set-row"><span class="set-label">Effort</span><div class="seg" id="search-effort"></div></div>
+          <div class="set-est" id="search-est"></div>
+        </section>
 
-      <section class="set-sec">
-        <h3>Library</h3>
-        <div class="set-row"><label for="set-nsfw">Hide NSFW &amp; Thirst from All bookmarks<small class="set-help" style="display:block;font-weight:400">They stay one click away under Categories.</small></label>
-          <span class="switch"><input type="checkbox" id="set-nsfw"><span></span></span>
-        </div>
-        <div class="set-row"><label for="set-voice">Voice search language</label>
-          <select id="set-voice">
-            <option value="en-US">English (US)</option><option value="en-GB">English (UK)</option><option value="fr-FR">Français</option>
-            <option value="es-ES">Español</option><option value="pt-BR">Português (BR)</option><option value="de-DE">Deutsch</option>
-            <option value="ja-JP">日本語</option><option value="ko-KR">한국어</option><option value="ar-SA">العربية</option>
-          </select>
-        </div>
-      </section>
+        <section class="set-sec" data-sec="key" hidden>
+          <h3>Anthropic API key</h3>
+          <p class="set-help">For Claude tagging and description search. Get one at <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">console.anthropic.com</a>. It's kept only in this browser. Anyone with it can spend on your account.</p>
+          <div class="key-ok" id="key-ok" hidden><i class="dot"></i><span>Key saved <code id="key-hint"></code></span><button class="btn" id="key-replace" type="button">Replace</button><button class="btn" id="key-remove" type="button">Remove</button></div>
+          <form class="key-form" id="key-form" hidden autocomplete="off">
+            <input type="password" id="key-input" placeholder="sk-ant-…" autocomplete="off" spellcheck="false" aria-label="Anthropic API key">
+            <button class="btn primary" id="key-save" type="submit">Save key</button>
+          </form>
+          <div class="key-msg" id="key-msg"></div>
+        </section>
 
-      <section class="set-sec">
-        <h3>Data</h3>
-        <p class="set-help">Your stash lives only in this browser. <b>Uninstalling the extension deletes it</b>, so download a backup now and then.</p>
-        <div class="set-row"><span class="set-label">Back up everything<small class="set-help" style="display:block;font-weight:400">One file with every bookmark, tag and AI description.</small></span><button class="btn" id="set-backup" type="button">Download backup</button></div>
-        <div class="set-row"><span class="set-label">Restore a backup<small class="set-help" style="display:block;font-weight:400">Merges it into what's here; nothing is deleted.</small></span><button class="btn" id="set-restore" type="button">Restore…</button><input type="file" id="restore-file" accept=".json,application/json" hidden></div>
-        <div class="set-row"><span class="set-label">Export as JSON<small class="set-help" style="display:block;font-weight:400">A readable list of bookmarks with their tags, for use elsewhere.</small></span><button class="btn" id="set-export" type="button">Export</button></div>
-      </section>
+        <section class="set-sec" data-sec="data" hidden>
+          <h3>Data</h3>
+          <p class="set-help">Your stash lives only in this browser. <b>Uninstalling deletes it.</b></p>
+          <div class="set-row"><span class="set-label">Backup</span><button class="btn" id="set-backup" type="button">Download backup</button></div>
+          <div class="set-row"><span class="set-label">Restore<small class="set-help">Merges into what's here. Deletes nothing.</small></span><button class="btn" id="set-restore" type="button">Restore…</button><input type="file" id="restore-file" accept=".json,application/json" hidden></div>
+          <div class="set-row"><span class="set-label">Export as JSON<small class="set-help">Bookmarks and tags, for other apps.</small></span><button class="btn" id="set-export" type="button">Export</button></div>
+        </section>
+      </div>
     </div>
   </dialog>
 

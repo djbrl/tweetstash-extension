@@ -73,42 +73,47 @@ function renderSettings() {
   $("#key-form").hidden = s.hasKey && !keyEditing;
   $("#key-hint").textContent = s.keyHint;
 
-  const claudeCost = estimate("tag", s.tagModel, s.tagEffort, 5000).cost;
+  const claudeCost = estimate("tag", s.tagModel, s.tagEffort, 1000).cost;
   $("#tagger-opts").innerHTML = [
-    ["local", "On this computer", "Free, and nothing leaves your browser. Picks the category and the tags it can read in the post. Less accurate.", "Free"],
-    ["claude", "Claude", "Hosted by Anthropic. Much better tags: recognizes games, characters, shows and art styles. Needs an API key.", money(claudeCost) + "<small>per 5,000</small>"],
+    ["local", "On this computer", "Free and private. Less accurate.", "Free"],
+    ["claude", "Claude", "Much better tags. Needs an API key.", money(claudeCost) + "<small>per 1,000</small>"],
   ].map(([v, title, note, price]) => `<button type="button" class="model-opt ${s.tagger === v ? "on" : ""}" data-tagger="${v}">
       <i class="radio"></i><span><b>${title}</b><small>${note}</small></span><span class="price">${price}</span></button>`).join("");
   $("#local-box").hidden = s.tagger !== "local";
   $("#claude-box").hidden = s.tagger !== "claude";
   $("#claude-nokey").hidden = s.hasKey;
   if (s.tagger === "local") renderLocalModel();
-  $("#tag-models").innerHTML = modelOptions("tag", s.tagModel, s.tagEffort, 5000, "per 5,000");
+  $("#tag-models").innerHTML = modelOptions("tag", s.tagModel, s.tagEffort, 1000, "per 1,000");
   $("#search-models").innerHTML = modelOptions("search", s.searchModel, s.searchEffort, 1, "per search");
   $("#tag-effort").innerHTML = segHtml(s.efforts, s.tagEffort);
   $("#search-effort").innerHTML = segHtml(s.efforts, s.searchEffort);
 
-  const total = state.stats?.total || 5000;
+  const total = state.stats?.total || 1000;
   const t = estimate("tag", s.tagModel, s.tagEffort, total);
-  $("#tag-est").innerHTML = `Re-tagging your whole stash (${total.toLocaleString()}) with ${esc(modelLabel(s.tagModel))} at ${s.tagEffort} effort: about <b>${money(t.cost)}</b>. `
-    + (t.measured ? "Based on your past runs." : "An estimate until you've run it once; then it uses real numbers.");
+  $("#tag-est").innerHTML = `Your whole stash (${total.toLocaleString()}): about <b>${money(t.cost)}</b>${t.measured ? ", from your past runs" : ""}.`;
   const q = estimate("search", s.searchModel, s.searchEffort);
-  $("#search-est").innerHTML = `About <b>${money(q.cost)}</b> per search. ` + (q.measured ? "Based on your past searches." : "An estimate until you've searched with it.");
+  $("#search-est").innerHTML = `About <b>${money(q.cost)}</b> per search${q.measured ? ", from your past searches" : ""}.`;
 
   $("#set-nsfw").checked = s.hideNsfw;
   $("#set-voice").value = store.get("tweetstash-voice-lang", "en-US");
+}
+
+// One section at a time; the left list switches between them.
+export function showSection(sec) {
+  $$("#set-nav button").forEach((b) => b.classList.toggle("on", b.dataset.sec === sec));
+  $$(".set-body .set-sec").forEach((x) => (x.hidden = x.dataset.sec !== sec));
+  $(".set-body").scrollTop = 0;
 }
 
 // The local model: downloaded or not, and how fast it'll be here.
 async function renderLocalModel() {
   let m;
   try { m = await api("/api/local-model"); } catch { return; }
-  const speed = m.gpu ? "It uses your graphics card: about 10 minutes per 5,000 bookmarks."
-    : "No graphics card was found, so it runs on the processor: about 1.5 hours per 5,000 bookmarks.";
+  const speed = m.gpu ? "About 2 minutes per 1,000 bookmarks." : "About 20 minutes per 1,000 bookmarks (no graphics card found).";
   $("#local-status").textContent = m.state === "loading" && m.total
     ? `Downloading the model… ${Math.round((m.loaded / m.total) * 100)}%`
     : m.downloaded ? `Model downloaded (${m.mb} MB). ${speed}`
-    : `The model downloads once (${m.mb} MB) the first time you tag. ${speed}`;
+    : `Downloads a ${m.mb} MB model the first time. ${speed}`;
   $("#local-remove").hidden = !m.downloaded;
 }
 
@@ -225,6 +230,8 @@ export function initSettings() {
 
   onPick("#set-theme", "v", setTheme);
   onPick("#tagger-opts", "tagger", (v) => saveSettings({ tagger: v }));
+  onPick("#set-nav", "sec", showSection);
+  dlg.addEventListener("click", (e) => { const g = e.target.closest("[data-goto]"); if (g) showSection(g.dataset.goto); });
   $("#local-remove").onclick = async () => {
     const ok = await confirmDialog({ title: "Delete the tagging model?", body: "Your tags stay. The model downloads again the next time you tag on this computer.", ok: "Delete model", danger: true });
     if (!ok) return;
