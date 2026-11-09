@@ -75,7 +75,7 @@ function renderSettings() {
 
   const claudeCost = estimate("tag", s.tagModel, s.tagEffort, 1000).cost;
   $("#tagger-opts").innerHTML = [
-    ["local", "On this computer", "Free and private. Less accurate.", "Free"],
+    ["local", "On this computer", "Free and private. Learns from your fixes. Less accurate than Claude.", "Free"],
     ["claude", "Claude", "Much better tags. Needs an API key.", money(claudeCost) + "<small>per 1,000</small>"],
   ].map(([v, title, note, price]) => `<button type="button" class="model-opt ${s.tagger === v ? "on" : ""}" data-tagger="${v}">
       <i class="radio"></i><span><b>${title}</b><small>${note}</small></span><span class="price">${price}</span></button>`).join("");
@@ -112,8 +112,8 @@ async function renderLocalModel() {
   const speed = m.gpu ? "About 2 minutes per 1,000 bookmarks." : "About 20 minutes per 1,000 bookmarks (no graphics card found).";
   $("#local-status").textContent = m.state === "loading" && m.total
     ? `Downloading the model… ${Math.round((m.loaded / m.total) * 100)}%`
-    : m.downloaded ? `Model downloaded (${m.mb} MB). ${speed}`
-    : `Downloads a ${m.mb} MB model the first time. ${speed}`;
+    : m.downloaded ? `Models downloaded (${m.mb} MB). ${speed}`
+    : `Downloads ${m.mb} MB of models the first time: one for pictures, one that reads posts in any language. ${speed}`;
   $("#local-remove").hidden = !m.downloaded;
 }
 

@@ -1,0 +1,33 @@
+// The v0.1.1 zero-shot tagger's descriptions, kept here so the test can compare against it.
+export const CATEGORY_PICTURES = {
+  "Art & Illustration": ["a digital illustration or painting", "concept art of a character", "a sketch or drawing"],
+  "Design & UI": ["a user interface design", "a website or app mockup", "a graphic design layout with typography"],
+  "Dev & Engineering": ["a screenshot of code", "a programming terminal", "a software engineering diagram"],
+  "AI & ML": ["a post about artificial intelligence", "a screenshot of a chatbot", "a machine learning chart"],
+  "Tools & Resources": ["a screenshot of a software tool", "a list of useful websites and resources", "a product page of an app"],
+  "Business & Freelance": ["a chart about money and business", "advice about freelancing and clients", "a post about startups and revenue"],
+  "Career & Learning": ["advice about careers and jobs", "a tutorial or study notes", "a post about learning a skill"],
+  "Games": ["a video game screenshot", "official art from a video game", "a game character in a fighting game"],
+  "Anime & Manga": ["an anime screenshot", "a manga page", "anime fan art"],
+  "Film & TV": ["a still from a movie", "a scene from a TV show", "a movie poster"],
+  "News & Opinion": ["a screenshot of a news headline", "a political post or opinion", "a photo from a news event"],
+  "Humor & Memes": ["a funny meme with text", "a joke or reaction image", "a silly cartoon meme"],
+  "Life & Health": ["a photo about fitness or health", "a photo of food or cooking", "advice about daily life and wellbeing"],
+  "Other": ["a random everyday photo", "a picture of an object", "a miscellaneous image"],
+};
+export const CATEGORY_WORDS = {
+  "Art & Illustration": "art, illustration, drawing, painting, concept art, sketch",
+  "Design & UI": "graphic design, UI/UX, typography, web design",
+  "Dev & Engineering": "programming, software engineering, code, developers",
+  "AI & ML": "artificial intelligence, machine learning, LLMs, ChatGPT, AI models",
+  "Tools & Resources": "useful tools, apps, websites and resources",
+  "Business & Freelance": "business, freelancing, startups, money, marketing, clients",
+  "Career & Learning": "careers, jobs, learning, studying, self-improvement advice",
+  "Games": "video games, gaming, game release, players",
+  "Anime & Manga": "anime, manga, episode, otaku",
+  "Film & TV": "movies, TV shows, actors, cinema",
+  "News & Opinion": "news, politics, opinion, world events",
+  "Humor & Memes": "funny meme, joke, lol, humor",
+  "Life & Health": "health, fitness, food, life advice, wellbeing",
+  "Other": "miscellaneous, random",
+};

@@ -9,6 +9,8 @@ import { removeTag, openTagInput } from "./tag-edit.js";
 import { clearSearch, initSearch } from "./search.js";
 import { initVoice } from "./voice.js";
 import { initSettings, loadSettings } from "./settings.js";
+import { initTeach } from "./teach.js";
+import { openCategoryMenu } from "./category-edit.js";
 
 // Start the engine and load settings before polling, search, or background UI work.
 try {
@@ -46,6 +48,8 @@ document.addEventListener("click", (e) => {
   const tagChip = on(".card-tags [data-tag]");
   if (tagChip) return setFilter("tag", tagChip.dataset.tag);
   if (on(".add-tag")) return openTagInput(on(".card"), on(".add-tag"));
+  if (on("[data-cat-edit]")) return openCategoryMenu(on(".card"), on("[data-cat-edit]"));
+  if (on(".cat-menu")) return;
   if (on(".more-text")) {
     const txt = on(".card").querySelector(".text");
     txt.classList.toggle("clamp");
@@ -75,6 +79,7 @@ initTagging();
 initSearch();
 initVoice();
 initSettings();
+initTeach();
 
 renderFilters();
 load(true);

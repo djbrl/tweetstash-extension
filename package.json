@@ -1,6 +1,6 @@
 {
   "name": "tweetstash-extension",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "private": true,
   "license": "MIT",
   "description": "TweetStash as a Chrome extension only: your X bookmarks, AI tagging and description search, with no server.",

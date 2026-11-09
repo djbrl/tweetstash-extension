@@ -113,6 +113,9 @@ const LATER_COLUMNS = [
   "subjects TEXT", // named games, characters, people, brands
   "nsfw_level TEXT", // none / suggestive / explicit
   "ai_refused INTEGER", // the AI declined to tag it
+  "category_by TEXT", // who set the category: 'user', 'local' (this computer) or 'claude'
+  "tag_confidence REAL", // how sure the local tagger was (0-1)
+  "tag_unsure INTEGER", // 1: the local tagger wasn't sure; listed under "Check these"
 ];
 for (const col of LATER_COLUMNS) {
   try { db.exec(`ALTER TABLE tweets ADD COLUMN ${col}`); } catch {}

@@ -50,7 +50,10 @@ export function topAuthors(n = 80) {
 // ---------- AI tagging results ----------
 
 const delAiTags = db.prepare(`DELETE FROM tags WHERE tweet_id = ? AND source = 'ai'`);
-const setCategory = db.prepare(`UPDATE tweets SET category = ?, tagged_at = ?, tag_error = NULL WHERE id = ?`);
+// A category you picked yourself is never replaced.
+const setCategory = db.prepare(`UPDATE tweets SET tagged_at = ?, tag_error = NULL, tag_unsure = 0, tag_confidence = NULL,
+  category = CASE WHEN category_by = 'user' THEN category ELSE ? END,
+  category_by = CASE WHEN category_by = 'user' THEN 'user' ELSE 'claude' END WHERE id = ?`);
 const setDetails = db.prepare(`UPDATE tweets SET description = ?, medium = ?, subjects = ?, nsfw_level = ?, ai_refused = ? WHERE id = ?`);
 const descDel = db.prepare(`DELETE FROM desc_fts WHERE rowid = (SELECT rowid FROM tweets WHERE id = ?)`);
 const descIns = db.prepare(`INSERT INTO desc_fts (rowid, description, subjects) SELECT rowid, ?, ? FROM tweets WHERE id = ?`);
@@ -65,7 +68,7 @@ export function applyAiTags(results) {
       delAiTags.run(r.id);
       // Subjects double as tags, so "elden-ring" or "jinx" shows up in the tag list and tag filters.
       for (const tag of new Set([...r.tags, ...(r.subjects || [])].map(normTag).filter(Boolean))) addTag.run(r.id, tag, "ai");
-      setCategory.run(r.category, Date.now(), r.id);
+      setCategory.run(Date.now(), r.category, r.id);
       if (r.description !== undefined) {
         const subjects = (r.subjects || []).join(", ");
         setDetails.run(r.description || null, r.medium || null, subjects || null, r.nsfw || null, r.refused ? 1 : 0, r.id);

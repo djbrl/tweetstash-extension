@@ -26,9 +26,11 @@ extension deletes it.
   can remove your key at any time in Settings.
 - Images in your library are loaded from X's image servers (pbs.twimg.com), as they are on X.
 - **Hugging Face, for a one-time download only.** If you tag on this computer (the free option), TweetStash
-  downloads an image-recognition model (CLIP) from Hugging Face (https://huggingface.co) the first time,
-  and the browser keeps it. Nothing about you or your bookmarks is sent: it's a plain file download, and
-  the tagging itself runs entirely in your browser. You can delete the model in Settings.
+  downloads two models from Hugging Face (https://huggingface.co) the first time: an image-recognition
+  model (CLIP) and a text model that reads posts (multilingual-e5-small). The browser keeps them. Nothing
+  about you or your bookmarks is sent: it's a plain file download, and the tagging itself, including what
+  it learns from the categories you fix, runs entirely in your browser. You can delete the models in
+  Settings.
 
 Your X cookies and password are never read, stored or sent anywhere. TweetStash doesn't sell or transfer
 your data, and doesn't use it for anything except showing you your own library.

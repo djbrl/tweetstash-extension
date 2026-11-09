@@ -5,7 +5,7 @@ import { load, renderResultLine } from "./feed.js";
 import { renderSidebar } from "./sidebar.js";
 import { renderTaggingButton } from "./tagging.js";
 
-let lastTotal = null, wasTagging = false, timer = 0;
+let lastTotal = null, wasTagging = false, timer = 0, lastLearned = null;
 
 export async function refreshStats() {
   clearTimeout(timer);
@@ -31,6 +31,10 @@ export async function refreshStats() {
     load(true);
     toast(s.job.stoppedByUser ? "Tagging stopped" : s.job.failed ? `Tagging done, ${s.job.failed} failed` : "Tagging done ✦");
   }
+  // It learned from your fixes and moved some posts: say so (the feed isn't reloaded under you).
+  const l = s.learning;
+  if (l?.at && lastLearned !== null && l.at !== lastLearned && l.moved) toast(`Learned from your fixes: ${l.moved.toLocaleString()} post${l.moved === 1 ? "" : "s"} re-sorted`);
+  if (l) lastLearned = l.at;
   if (lastTotal === null) renderResultLine();
   lastTotal = s.total;
   wasTagging = s.job.running;

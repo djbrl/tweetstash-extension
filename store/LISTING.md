@@ -13,7 +13,7 @@ Search the posts you saved on X. Keyword search, automatic tags and picture sear
 • Sync in one click: open your bookmarks on x.com and press Sync. TweetStash fetches your whole history once, then only what's new. Several X accounts? Each bookmark remembers who saved it.
 • Browse your way: grid or list, newest or oldest first, filter by photos, videos or links, by account, author or tag.
 • Instant keyword search across post text, authors and tags.
-• Free automatic tagging on your computer: an image-recognition model sorts every bookmark into a category, with nothing sent anywhere.
+• Free automatic tagging on your computer: it looks at every picture and reads every post (in any language) to sort it into a category, NSFW included, with nothing sent anywhere. Fix a category and it learns from you; teach it tags of your own.
 • Better tags with Claude, using your own Anthropic API key: it recognizes games, characters, shows and art styles. Plus "describe it" search: type "that blue isometric city illustration" and get the post back, pictures included.
 • Private by design: no server, no account, no tracking. Your library lives only in this browser. Claude features talk straight to Anthropic with your key, and only when you use them.
 • Backup and restore to a file at any time.
@@ -49,7 +49,7 @@ Save the user's X (Twitter) bookmarks into a private library inside the browser,
 | Host: pbs.twimg.com | Loads the bookmarks' images in the library, and makes small copies for AI tagging when the user turns it on. |
 | Host: api.anthropic.com | Optional AI tagging and description search, sent with the user's own Anthropic API key, only when they use those features. |
 
-**Remote code:** No, I am not using remote code. (All code, including SQLite, the Anthropic SDK, Transformers.js and its ONNX runtime, is bundled in the package. The free tagger downloads model weights, plain data files, from huggingface.co on first use; no code is downloaded.)
+**Remote code:** No, I am not using remote code. (All code, including SQLite, the Anthropic SDK, Transformers.js and its ONNX runtime, is bundled in the package. The free tagger downloads model weights, plain data files, from huggingface.co on first use; no code is downloaded. What it learns from the user's fixes is a small set of numbers stored in the local database.)
 
 **Data usage:** tick **Website content** (bookmarked posts' text and images, sent to Anthropic only when the user turns on AI features). Tick all three certifications:
 - I do not sell or transfer user data to third parties, outside of the approved use cases

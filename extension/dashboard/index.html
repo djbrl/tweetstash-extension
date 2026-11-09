@@ -25,6 +25,7 @@
       <button class="nav-item active" data-reset>All bookmarks <span class="count" id="count-all">0</span></button>
       <button class="nav-item" data-filter="untagged" data-value="1">Not tagged yet <span class="count" id="count-untagged">0</span></button>
       <button class="nav-item" data-filter="failed" data-value="1" id="nav-failed" hidden>Couldn't tag <span class="count" id="count-failed">0</span></button>
+      <button class="nav-item" data-filter="unsure" data-value="1" id="nav-unsure" hidden title="Posts the local tagger wasn't sure about">Check these <span class="count" id="count-unsure">0</span></button>
     </nav>
 
     <section class="side-section" id="sec-accounts">
@@ -89,6 +90,7 @@
         <button data-view="list" title="List">☰</button>
       </div>
       <span class="grow"></span>
+      <button class="btn teach-btn" id="teach-btn" type="button" title="Show the local tagger what a tag or category means"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 2 8l10 5 10-5-10-5Z"/><path d="M6 10.5V16c2 2 10 2 12 0v-5.5"/></svg><span>Teach</span></button>
       <button class="ai-btn" id="ai-btn" type="button"><span class="ai-fill" id="ai-fill"></span><span class="sparkle">✦</span><span id="ai-label">Tag</span></button>
       </div>
     </header>
@@ -196,6 +198,35 @@
           <div class="set-row"><span class="set-label">Restore<small class="set-help">Merges into what's here. Deletes nothing.</small></span><button class="btn" id="set-restore" type="button">Restore…</button><input type="file" id="restore-file" accept=".json,application/json" hidden></div>
           <div class="set-row"><span class="set-label">Export as JSON<small class="set-help">Bookmarks and tags, for other apps.</small></span><button class="btn" id="set-export" type="button">Export</button></div>
         </section>
+      </div>
+    </div>
+  </dialog>
+
+  <dialog class="dlg teach-dlg" id="teach-dlg" aria-labelledby="teach-title">
+    <div class="set-head"><h2 id="teach-title">Teach the local tagger</h2><button class="tp-x" id="teach-close" type="button" aria-label="Close">×</button></div>
+    <div class="teach-pick" id="teach-pick">
+      <p class="set-help">Pick a category or a tag of your own and answer a few posts. After each round it learns, and the next posts get better. Fixing a post's category with the arrow on its card teaches it too. Everything stays on this computer.</p>
+      <p class="set-help"><span id="teach-fixes"></span> <button class="linkish" id="teach-undo" type="button" hidden>Undo what it learned</button></p>
+      <form class="teach-new" id="teach-new" autocomplete="off">
+        <div class="seg" id="teach-kind"><button type="button" data-kind="category" class="on">Category</button><button type="button" data-kind="tag">Tag</button></div>
+        <input id="teach-label" list="teach-labels" placeholder="Pick a category" spellcheck="false" maxlength="60">
+        <datalist id="teach-labels"></datalist>
+        <button class="btn primary" type="submit">Start</button>
+      </form>
+      <div class="teach-taught" id="teach-taught"></div>
+    </div>
+    <div class="teach-round" id="teach-round" hidden>
+      <div class="teach-bar">
+        <button class="linkish" id="teach-back" type="button">← All</button>
+        <b id="teach-what"></b>
+        <span class="teach-count" id="teach-count"></span>
+      </div>
+      <p class="set-help" id="teach-hint"></p>
+      <div class="teach-grid" id="teach-grid"></div>
+      <div class="teach-foot">
+        <span class="teach-status" id="teach-status"></span>
+        <button class="btn" id="teach-apply" type="button" hidden>Tag my whole stash</button>
+        <button class="btn primary" id="teach-save" type="button">Save answers · next 12</button>
       </div>
     </div>
   </dialog>

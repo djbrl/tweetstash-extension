@@ -27,7 +27,7 @@ export async function startTagging(body) {
 
 export function renderTaggingButton() {
   renderPanel();
-  const { job, untagged, total, failed } = state.stats;
+  const { job, untagged, total, failed, outdated } = state.stats;
   const b = $("#ai-btn");
   b.className = "ai-btn";
   b.title = "";
@@ -50,6 +50,10 @@ export function renderTaggingButton() {
   } else if (untagged) {
     b.classList.add("primary");
     label.textContent = `Tag ${untagged.toLocaleString()} new`;
+  } else if (outdated) {
+    b.classList.add("primary");
+    label.textContent = `Re-sort ${outdated.toLocaleString()} with the new tagger`;
+    b.title = "The free tagger got better in 0.1.2";
   } else {
     label.textContent = "All tagged";
     b.title = "Click to re-tag everything";
@@ -57,7 +61,7 @@ export function renderTaggingButton() {
 }
 
 async function onButtonClick() {
-  const { job, untagged, total, failed } = state.stats;
+  const { job, untagged, total, failed, outdated } = state.stats;
   if (job.running) {
     panelHiddenFor = null; // bring the window back
     renderTaggingButton();
@@ -65,10 +69,18 @@ async function onButtonClick() {
   }
   if (failed && !job.fatal) return startTagging({ failed: true });
   if (untagged) return startTagging({});
+  if (outdated) {
+    const ok = await confirmDialog({
+      title: "Re-sort with the new tagger?",
+      body: `The free tagger reads posts much better now, and it can tell NSFW apart. It re-sorts the <b>${outdated.toLocaleString()} bookmarks</b> it sorted before, on this computer, for free. The first time, it downloads a second model that reads posts (about 135 MB). Categories and tags you set yourself are kept.`,
+      ok: "Re-sort",
+    });
+    return ok && startTagging({ outdated: true });
+  }
   const s = state.settings;
   const ok = await confirmDialog(s?.tagger === "local" ? {
     title: "Re-tag everything?",
-    body: `The local model re-sorts all <b>${total.toLocaleString()} bookmarks</b> and replaces their automatic tags and categories. Tags you added yourself are kept. It's free.`,
+    body: `The local model re-sorts all <b>${total.toLocaleString()} bookmarks</b> and replaces their automatic tags and categories. Tags and categories you set yourself are kept. It's free.`,
     ok: "Re-tag all",
   } : {
     title: "Re-tag everything?",

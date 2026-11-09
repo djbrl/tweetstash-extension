@@ -48,11 +48,14 @@ export function renderResultLine() {
     $("#result-line").insertAdjacentHTML("beforeend", ` · <button class="linkish" id="retry-failed" type="button">Retry these</button>`);
     $("#retry-failed").onclick = () => startTagging({ failed: true });
   }
+  if (state.filters.unsure === "1" && n) {
+    $("#result-line").insertAdjacentHTML("beforeend", ` · least sure first. Fix any that are wrong with the arrow next to the category: the tagger learns from it.`);
+  }
 }
 
 const FILTER_LABELS = {
   q: (v) => `“${v}”`, account: (v) => v, tag: (v) => `#${v}`, category: (v) => v,
-  author: (v) => `@${v}`, untagged: () => "Not tagged yet", failed: () => "Couldn't tag",
+  author: (v) => `@${v}`, untagged: () => "Not tagged yet", failed: () => "Couldn't tag", unsure: () => "Check these",
   media: (v) => ({ 1: "Has media", video: "Has video", links: "Has links" }[v]),
 };
 

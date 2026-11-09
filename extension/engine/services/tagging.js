@@ -4,7 +4,7 @@
 //  - claude: sends batches of posts (text + first image) to Claude and stores a category, tags, subjects,
 //    medium, NSFW level and a one-line picture description for each. Needs an API key; better.
 // One job runs at a time; the dashboard polls `job` for progress.
-import { idsToTag, tweetsByIds } from "../db/bookmarks.js";
+import { idsToTag, tweetsByIds, outdatedIds } from "../db/bookmarks.js";
 import { applyAiTags, topTags, markTagFailed, markRefused } from "../db/tags.js";
 import { TAG_SCHEMA, TAG_SYSTEM, tagInput } from "../prompts/tagging.js";
 import { Anthropic, getClient, jsonRequest, jsonAnswer, billedTokens, Refused } from "./anthropic.js";
@@ -85,12 +85,13 @@ async function tagBatch(rows, { withImages = true } = {}) {
 const isAuthError = (err) =>
   err?.noKey || err instanceof Anthropic.AuthenticationError || err instanceof Anthropic.PermissionDeniedError || /authentication method/i.test(err?.message || "");
 
-// all: re-tag everything; failed: retry the ones that failed; ids: exactly these; limit: only the newest N.
-export function startTagging({ all = false, failed = false, limit = 0, ids: only = null } = {}) {
+// all: re-tag everything; failed: retry the ones that failed; ids: exactly these; limit: only the newest N;
+// outdated: the posts the local tagger sorted before 0.1.2 (local tagger only).
+export function startTagging({ all = false, failed = false, limit = 0, ids: only = null, outdated = false } = {}) {
   if (job.running) return job;
-  let ids = Array.isArray(only) ? only.map(String) : idsToTag(all, failed);
+  let ids = Array.isArray(only) ? only.map(String) : outdated ? outdatedIds() : idsToTag(all, failed);
   if (limit > 0) ids = ids.slice(0, limit);
-  if (tagger() === "local") return startLocal(ids);
+  if (tagger() === "local" || outdated) return startLocal(ids);
   const { tagModel, tagEffort } = settings();
   Object.assign(job, {
     model: tagModel, effort: tagEffort, running: true, stopping: false, stoppedByUser: false, fatal: false,

@@ -9,11 +9,12 @@ import { job, startTagging, stopTagging } from "./services/tagging.js";
 import { search } from "./services/search.js";
 import { model, modelInfo, loadModel, removeModel } from "./services/local.js";
 import { tidyTags } from "./services/tag-tidy.js";
+import { setUserCategory, nextRound, answer, applyTag, teachStatus, forget, resetCategories, learning } from "./services/personal.js";
 import { syncs, receive, empty, validateAccount, historyDone, markHistoryDone } from "./services/sync.js";
 
 export const routes = {
   // ---------- browsing ----------
-  "GET /api/stats": () => ({ ...stats(), categories_all: CATEGORIES, job, syncs }),
+  "GET /api/stats": () => ({ ...stats(), categories_all: CATEGORIES, job, syncs, learning }),
   "GET /api/bookmarks": (body, url) => {
     const p = Object.fromEntries(url.searchParams);
     // "Hide NSFW" applies to browsing; picking a category (the NSFW one included) still shows it.
@@ -23,6 +24,8 @@ export const routes = {
     setUserTags(String(body.id), Array.isArray(body.tags) ? body.tags.map(String) : []);
     return { ok: true };
   },
+  // Your own category for a post (null: let the tagger decide again). The local tagger learns from it.
+  "POST /api/category": (body) => setUserCategory(String(body.id), body.category ?? null),
   "GET /api/export": () => exportAll(),
   "GET /api/backup": () => backupAll(),
   "POST /api/import": (body) => importBackup(body.data),
@@ -46,6 +49,14 @@ export const routes = {
   "GET /api/local-model": () => modelInfo(),
   "POST /api/local-model/download": () => { loadModel().catch(() => {}); return model; },
   "POST /api/local-model/remove": () => removeModel(),
+
+  // ---------- teaching the local tagger (personal.js) ----------
+  "GET /api/teach/status": () => teachStatus(),
+  "POST /api/teach/next": (body) => nextRound(body.kind, body.label),
+  "POST /api/teach/answer": (body) => answer(body.kind, body.label, body.answers),
+  "POST /api/teach/apply": (body) => applyTag(body.label),
+  "POST /api/teach/forget": (body) => forget(body.kind, body.label),
+  "POST /api/teach/reset-categories": () => resetCategories(),
 
   // ---------- search ----------
   // The dashboard's Stop button aborts the AI calls so they aren't billed further.

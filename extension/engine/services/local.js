@@ -1,18 +1,26 @@
-// The free local tagger: CLIP (ViT-B/16) running in this worker. It turns each post's first picture and
-// its words into vectors, then picks the closest category and medium. Nothing is generated and nothing
-// leaves the browser except the one-time model download from Hugging Face, which the browser keeps.
-// With a GPU (WebGPU) it runs the 16-bit model: ~300 MB, ~0.1 s a post. Without one it falls back to the
-// 8-bit model on the CPU: ~150 MB, ~1 s a post.
+// The free local tagger, running in this worker. Two models turn each post into numbers:
+//  - CLIP (ViT-B/16): what the first picture looks like, and the start of the words;
+//  - multilingual-e5-small: what the words mean, in any language (CLIP only knows short English captions).
+// A small classifier trained offline (classifier.js, scripts/tagger) turns those numbers into a category;
+// your own fixes adjust it (personal.js). Nothing is generated and nothing leaves the browser except the
+// one-time model download from Hugging Face, which the browser keeps.
+// With a GPU (WebGPU) CLIP runs at 16 bits (~300 MB); without one, 8 bits on the CPU (~150 MB). The text
+// model is 8-bit everywhere (~130 MB), as it was trained.
 import { db, transaction } from "../db/index.js";
 import { normTag, topTags } from "../db/tags.js";
-import { NSFW_CATEGORY } from "../catalog.js";
 import { smallImage, firstThumb } from "./images.js";
+import { wordsOf, e5WordsOf, featureVector } from "./features.js";
+import { headReady, classify, taughtTags, noAnswers } from "./personal.js";
 
 const MODEL_ID = "Xenova/clip-vit-base-patch16";
-const GPU = { dtype: "fp16", mb: 300, files: ["vision_model_fp16.onnx", "text_model_fp16.onnx"] };
-const CPU = { dtype: "q8", mb: 152, files: ["vision_model_quantized.onnx", "text_model_quantized.onnx"] };
+const TEXT_ID = "Xenova/multilingual-e5-small";
+const TEXT_MB = 135;
+const GPU = { dtype: "fp16", mb: 300 + TEXT_MB, files: ["vision_model_fp16.onnx", "text_model_fp16.onnx"] };
+const CPU = { dtype: "q8", mb: 152 + TEXT_MB, files: ["vision_model_quantized.onnx", "text_model_quantized.onnx"] };
 
 db.exec(`CREATE TABLE IF NOT EXISTS local_vectors (tweet_id TEXT PRIMARY KEY, img BLOB, txt BLOB, model TEXT)`);
+// e5: the text model's vector; v2: computed by 0.1.2 or later (has e5 when the post has words).
+for (const col of ["e5 BLOB", "v2 INTEGER"]) { try { db.exec(`ALTER TABLE local_vectors ADD COLUMN ${col}`); } catch {} }
 
 // ---------- the model ----------
 
@@ -33,7 +41,8 @@ export async function modelInfo() {
   let downloaded = model.state === "ready";
   try {
     const keys = (await (await caches.open("transformers-cache")).keys()).map((r) => r.url);
-    downloaded ||= plan.files.every((f) => keys.some((u) => u.includes(MODEL_ID) && u.endsWith(f)));
+    downloaded ||= plan.files.every((f) => keys.some((u) => u.includes(MODEL_ID) && u.endsWith(f)))
+      && keys.some((u) => u.includes(TEXT_ID) && u.endsWith("model_quantized.onnx"));
   } catch {}
   return { ...model, downloaded, mb: plan.mb, gpu: await hasGpu() };
 }
@@ -45,7 +54,7 @@ export function loadModel() {
   const files = new Map(); // file -> { loaded, total }, for one overall progress number
   const progress_callback = (p) => {
     if (p.status !== "progress" || !p.total) return;
-    files.set(p.file, { loaded: p.loaded, total: p.total });
+    files.set(`${p.name}/${p.file}`, { loaded: p.loaded, total: p.total }); // both models have a config.json
     model.loaded = [...files.values()].reduce((s, f) => s + f.loaded, 0);
     model.total = [...files.values()].reduce((s, f) => s + f.total, 0);
   };
@@ -61,13 +70,14 @@ export function loadModel() {
     t.env.backends.onnx.wasm.numThreads = self.crossOriginIsolated ? Math.min(4, navigator.hardwareConcurrency || 1) : 1;
     const device = (await hasGpu()) ? "webgpu" : "wasm";
     const opts = { dtype: (device === "webgpu" ? GPU : CPU).dtype, device, progress_callback };
-    const [tokenizer, textModel, processor, visionModel] = await Promise.all([
+    const [tokenizer, textModel, processor, visionModel, reader] = await Promise.all([
       t.AutoTokenizer.from_pretrained(MODEL_ID, { progress_callback }),
       t.CLIPTextModelWithProjection.from_pretrained(MODEL_ID, opts),
       t.AutoProcessor.from_pretrained(MODEL_ID, { progress_callback }),
       t.CLIPVisionModelWithProjection.from_pretrained(MODEL_ID, opts),
+      t.pipeline("feature-extraction", TEXT_ID, { dtype: "q8", device: "wasm", progress_callback }),
     ]);
-    loaded = { t, tokenizer, textModel, processor, visionModel };
+    loaded = { t, tokenizer, textModel, processor, visionModel, reader };
     Object.assign(model, { state: "ready", device });
     return loaded;
   })().catch((err) => {
@@ -84,7 +94,7 @@ export async function removeModel() {
   loading = null;
   try {
     const cache = await caches.open("transformers-cache");
-    for (const req of await cache.keys()) if (req.url.includes(MODEL_ID)) await cache.delete(req);
+    for (const req of await cache.keys()) if (req.url.includes(MODEL_ID) || req.url.includes(TEXT_ID)) await cache.delete(req);
   } catch {}
   Object.assign(model, { state: "none", loaded: 0, total: 0, error: null });
   return model;
@@ -102,7 +112,7 @@ const normalize = (v) => {
   return out;
 };
 export const dot = (a, b) => { let s = 0; for (let i = 0; i < a.length; i++) s += a[i] * b[i]; return s; };
-const rows = (tensor) => Array.from({ length: tensor.dims[0] }, (_, i) => normalize(tensor.data.subarray(i * DIM, (i + 1) * DIM)));
+const rows = (tensor, dim = DIM) => Array.from({ length: tensor.dims[0] }, (_, i) => normalize(tensor.data.subarray(i * dim, (i + 1) * dim)));
 const toBlob = (v) => (v ? new Uint8Array(v.buffer.slice(v.byteOffset, v.byteOffset + v.byteLength)) : null);
 const fromBlob = (b) => (b ? new Float32Array(b.buffer.slice(b.byteOffset, b.byteOffset + b.byteLength)) : null);
 
@@ -112,10 +122,16 @@ export async function embedTexts(texts) {
   return rows(text_embeds);
 }
 
+// The text model's vector for a post's words ("passage: " is how e5 marks stored text).
+async function embedPassage(words) {
+  const { reader } = await loadModel();
+  return rows(await reader(["passage: " + words], { pooling: "mean", normalize: true }), 384)[0];
+}
+
 // A post's first picture, small. Fetched ahead (see prefetch) so downloading overlaps the model's work.
 export async function fetchPicture(row) {
   const small = smallImage(firstThumb(row));
-  if (!small || getVec.get(row.id, MODEL_ID)) return null;
+  if (!small || getVec.get(row.id, MODEL_ID)?.v2) return null;
   try {
     const res = await fetch(small, { signal: AbortSignal.timeout(8000) });
     return res.ok ? await res.blob() : null;
@@ -135,27 +151,42 @@ async function embedImage(blob) {
   }
 }
 
-// The post's own words, without links. CLIP only reads the start, so this stays short.
-const wordsOf = (r) => (r.text || "").replace(/https:\/\/t\.co\/\S+/g, "").replace(/\s+/g, " ").trim().slice(0, 300);
-
-// Vectors for these posts, computing (and keeping) any that are missing.
-const getVec = db.prepare(`SELECT img, txt FROM local_vectors WHERE tweet_id = ? AND model = ?`);
-const putVec = db.prepare(`INSERT OR REPLACE INTO local_vectors (tweet_id, img, txt, model) VALUES (?, ?, ?, ?)`);
+// Vectors for this post, computing (and keeping) any that are missing. Posts from 0.1.1 have CLIP's
+// vectors already and only get the text model's.
+const getVec = db.prepare(`SELECT img, txt, e5, v2 FROM local_vectors WHERE tweet_id = ? AND model = ?`);
+const putVec = db.prepare(`INSERT OR REPLACE INTO local_vectors (tweet_id, img, txt, e5, v2, model) VALUES (?, ?, ?, ?, 1, ?)`);
 export async function vectorsFor(row, picture) {
   const have = getVec.get(row.id, MODEL_ID);
-  if (have) return { img: fromBlob(have.img), txt: fromBlob(have.txt) };
-  const words = wordsOf(row);
-  const [txt] = words ? await embedTexts([words]) : [null];
-  const img = await embedImage(await picture);
-  putVec.run(row.id, toBlob(img), toBlob(txt), MODEL_ID);
-  return { img, txt };
+  if (have?.v2) return { img: fromBlob(have.img), txt: fromBlob(have.txt), e5: fromBlob(have.e5) };
+  let img, txt;
+  if (have) {
+    img = fromBlob(have.img);
+    txt = fromBlob(have.txt);
+  } else {
+    const words = wordsOf(row);
+    [txt] = words ? await embedTexts([words]) : [null];
+    img = await embedImage(await picture);
+  }
+  const passage = e5WordsOf(row);
+  const e5 = passage ? await embedPassage(passage) : null;
+  putVec.run(row.id, toBlob(img), toBlob(txt), toBlob(e5), MODEL_ID);
+  return { img, txt, e5 };
+}
+
+// Every post's features, from the stored vectors (no model needed), for retraining and re-sorting.
+export function allFeatures() {
+  const out = new Map();
+  for (const r of db.prepare(`SELECT v.tweet_id AS id, v.img, v.txt, v.e5, t.raw LIKE '%"possibly_sensitive":true%' AS sensitive
+      FROM local_vectors v JOIN tweets t ON t.id = v.tweet_id WHERE v.v2 = 1 AND v.model = ?`).all(MODEL_ID)) {
+    out.set(r.id, featureVector({ img: fromBlob(r.img), txt: fromBlob(r.txt), e5: fromBlob(r.e5), sensitive: !!r.sensitive }));
+  }
+  return out;
 }
 
 // ---------- tagging ----------
 
-// What each category looks like (for pictures) and sounds like (for words). NSFW isn't guessed: CLIP
-// doesn't spot it reliably, and a wrong guess would hide normal posts.
-const CATEGORY_PICTURES = {
+// Pictures for each category, used only to find posts to ask about while teaching (personal.js).
+export const CATEGORY_PICTURES = {
   "Art & Illustration": ["a digital illustration or painting", "concept art of a character", "a sketch or drawing"],
   "Design & UI": ["a user interface design", "a website or app mockup", "a graphic design layout with typography"],
   "Dev & Engineering": ["a screenshot of code", "a programming terminal", "a software engineering diagram"],
@@ -170,22 +201,7 @@ const CATEGORY_PICTURES = {
   "Humor & Memes": ["a funny meme with text", "a joke or reaction image", "a silly cartoon meme"],
   "Life & Health": ["a photo about fitness or health", "a photo of food or cooking", "advice about daily life and wellbeing"],
   "Other": ["a random everyday photo", "a picture of an object", "a miscellaneous image"],
-};
-const CATEGORY_WORDS = {
-  "Art & Illustration": "art, illustration, drawing, painting, concept art, sketch",
-  "Design & UI": "graphic design, UI/UX, typography, web design",
-  "Dev & Engineering": "programming, software engineering, code, developers",
-  "AI & ML": "artificial intelligence, machine learning, LLMs, ChatGPT, AI models",
-  "Tools & Resources": "useful tools, apps, websites and resources",
-  "Business & Freelance": "business, freelancing, startups, money, marketing, clients",
-  "Career & Learning": "careers, jobs, learning, studying, self-improvement advice",
-  "Games": "video games, gaming, game release, players",
-  "Anime & Manga": "anime, manga, episode, otaku",
-  "Film & TV": "movies, TV shows, actors, cinema",
-  "News & Opinion": "news, politics, opinion, world events",
-  "Humor & Memes": "funny meme, joke, lol, humor",
-  "Life & Health": "health, fitness, food, life advice, wellbeing",
-  "Other": "miscellaneous, random",
+  "NSFW & Thirst": ["an explicit pornographic photo", "a nude person", "a woman in lingerie", "a sexy pin-up pose", "ecchi anime girl"],
 };
 const MEDIUMS = {
   photo: "a photograph", drawing: "a digital drawing or illustration", painting: "a painting", "3d": "a 3D render",
@@ -195,27 +211,12 @@ const MEDIUMS = {
 let guess = null;
 async function guesses() {
   if (guess) return guess;
-  const names = Object.keys(CATEGORY_PICTURES).filter((c) => c !== NSFW_CATEGORY);
-  const pics = [];
-  for (const n of names) {
-    const v = await embedTexts(CATEGORY_PICTURES[n].map((p) => "a picture of " + p));
-    const m = new Float32Array(DIM);
-    v.forEach((x) => x.forEach((y, i) => (m[i] += y / v.length)));
-    pics.push(normalize(m));
-  }
-  const words = await embedTexts(names.map((n) => CATEGORY_WORDS[n]));
   const mediumNames = Object.keys(MEDIUMS);
   const mediums = await embedTexts(mediumNames.map((m) => MEDIUMS[m]));
-  guess = { names, pics, words, mediumNames, mediums };
+  guess = { mediumNames, mediums };
   return guess;
 }
 
-// Scores relative to the post's own average, so pictures and words compare fairly.
-const z = (arr) => {
-  const m = arr.reduce((a, b) => a + b, 0) / arr.length;
-  const sd = Math.sqrt(arr.reduce((a, b) => a + (b - m) ** 2, 0) / arr.length) || 1;
-  return arr.map((x) => (x - m) / sd);
-};
 const argmax = (a) => a.reduce((bi, s, i) => (s > a[bi] ? i : bi), 0);
 
 const hashtags = (text) => [...new Set([...(text || "").matchAll(/#([\p{L}\p{N}_]{2,40})/gu)].map((m) => normTag(m[1])).filter(Boolean))];
@@ -248,29 +249,34 @@ export function vocabulary() {
 // One post's category, medium and tags.
 export async function tagOne(row, vocab, picture) {
   const g = await guesses();
-  const { img, txt } = await vectorsFor(row, picture);
-  let category = "Other";
-  if (img || txt) {
-    const sp = img ? z(g.pics.map((c) => dot(c, img))) : null;
-    const st = txt ? z(g.words.map((c) => dot(c, txt))) : null;
-    // Pictures count 1.5x: measured best on a real stash.
-    category = g.names[argmax(g.names.map((_, k) => (sp ? 1.5 * sp[k] : 0) + (st ? st[k] : 0)))];
-  }
+  await headReady();
+  const { img, txt, e5 } = await vectorsFor(row, picture);
+  const x = featureVector({ img, txt, e5, sensitive: !!row.sensitive });
+  const { category, confidence, unsure } = img || txt || e5
+    ? classify(x, noAnswers().get(row.id))
+    : { category: "Other", confidence: 0, unsure: true };
   const medium = /"(video|animated_gif)"/.test(row.media || "") ? "video"
     : img ? g.mediumNames[argmax(g.mediums.map((m) => dot(m, img)))] : "text";
   const tags = new Set(hashtags(row.text));
   for (const p of phrases(row.text)) if (vocab.has(p)) tags.add(p);
-  return { id: row.id, category, medium, tags: [...tags].slice(0, 8) };
+  for (const t of taughtTags(x, row.id)) tags.add(t);
+  return { id: row.id, category, confidence, unsure, medium, tags: [...tags].slice(0, 8) };
 }
 
 const delAiTags = db.prepare(`DELETE FROM tags WHERE tweet_id = ? AND source = 'ai'`);
 const addTag = db.prepare(`INSERT OR IGNORE INTO tags (tweet_id, tag, source) VALUES (?, ?, 'ai')`);
-const setResult = db.prepare(`UPDATE tweets SET category = ?, medium = ?, tagged_at = ?, tag_error = NULL WHERE id = ?`);
+// A category you picked yourself is never replaced.
+const setResult = db.prepare(`UPDATE tweets SET medium = ?, tagged_at = ?, tag_error = NULL,
+  category = CASE WHEN category_by = 'user' THEN category ELSE ? END,
+  tag_confidence = CASE WHEN category_by = 'user' THEN NULL ELSE ? END,
+  tag_unsure = CASE WHEN category_by = 'user' THEN 0 ELSE ? END,
+  category_by = CASE WHEN category_by = 'user' THEN 'user' ELSE 'local' END
+  WHERE id = ?`);
 
 export function saveResult(r) {
   transaction(() => {
     delAiTags.run(r.id);
     for (const t of r.tags) addTag.run(r.id, t);
-    setResult.run(r.category, r.medium, Date.now(), r.id);
+    setResult.run(r.medium, Date.now(), r.category, r.confidence, r.unsure ? 1 : 0, r.id);
   });
 }

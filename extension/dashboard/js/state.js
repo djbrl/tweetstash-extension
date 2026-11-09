@@ -2,7 +2,7 @@
 import { store } from "./util.js";
 
 export const PAGE = 60;
-export const FILTER_KEYS = ["q", "account", "tag", "category", "author", "media", "untagged", "failed"];
+export const FILTER_KEYS = ["q", "account", "tag", "category", "author", "media", "untagged", "failed", "unsure"];
 
 const params = new URLSearchParams(location.search);
 

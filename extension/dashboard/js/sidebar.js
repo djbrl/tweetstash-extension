@@ -13,6 +13,8 @@ export function renderSidebar() {
   $("#count-untagged").textContent = s.untagged.toLocaleString();
   $("#count-failed").textContent = s.failed.toLocaleString();
   $("#nav-failed").hidden = !s.failed && state.filters.failed !== "1";
+  $("#count-unsure").textContent = s.unsure.toLocaleString();
+  $("#nav-unsure").hidden = !s.unsure && state.filters.unsure !== "1";
   $("#total-sub").hidden = true;
 
   const item = (key, value, label, n, img = "") =>

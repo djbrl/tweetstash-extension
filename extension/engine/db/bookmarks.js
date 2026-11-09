@@ -1,4 +1,5 @@
 // Storing captured bookmarks and reading them back for the dashboard.
+import { isSensitive } from "../services/features.js";
 import { db, transaction, backup, ftsQuery } from "./index.js";
 import { parseTweet, extractEntries, extras, sanitizePost } from "./parse.js";
 import { normTag } from "./tags.js";
@@ -78,6 +79,11 @@ export function emptyStash(account = "") {
 
 // ---------- reads ----------
 
+// Sorted by the local tagger, which wasn't sure ("Check these").
+const UNSURE_SQL = "t.tag_unsure = 1 AND t.category_by = 'local'";
+db.exec(`CREATE TABLE IF NOT EXISTS local_vectors (tweet_id TEXT PRIMARY KEY, img BLOB, txt BLOB, model TEXT)`);
+try { db.exec(`ALTER TABLE local_vectors ADD COLUMN v2 INTEGER`); } catch {}
+
 // sortIndex from X when we have it, capture order otherwise. (Too big for JS numbers, so it stays in SQL.)
 const SAVED_KEY = "CASE WHEN s.si > 0 THEN s.si ELSE s.sq END";
 const SORTS = {
@@ -91,7 +97,7 @@ const SORTS = {
 };
 
 // The dashboard's list: filters from the sidebar and search box, one page at a time.
-export function query({ q = "", account = "", tag = "", category = "", author = "", media = "", untagged = "", failed = "", hideNsfw = false, sort = "saved_desc", offset = 0, limit = 60, ids = null }) {
+export function query({ q = "", account = "", tag = "", category = "", author = "", media = "", untagged = "", failed = "", unsure = "", hideNsfw = false, sort = "saved_desc", offset = 0, limit = 60, ids = null }) {
   const where = [];
   const params = {};
   if (ids) { where.push("t.id IN (SELECT value FROM json_each(:ids))"); params.ids = JSON.stringify(ids); }
@@ -104,6 +110,7 @@ export function query({ q = "", account = "", tag = "", category = "", author = 
   if (media === "links") where.push("t.urls != '[]'");
   if (untagged === "1") where.push("t.tagged_at IS NULL");
   if (failed === "1") where.push("t.tag_error IS NOT NULL");
+  if (unsure === "1") where.push(UNSURE_SQL);
   if (hideNsfw && !ids) { where.push("COALESCE(t.category, '') != :nsfw"); params.nsfw = NSFW_CATEGORY; }
   const fq = q && ftsQuery(q);
   if (fq) {
@@ -123,10 +130,10 @@ export function query({ q = "", account = "", tag = "", category = "", author = 
   const total = db.prepare(`SELECT COUNT(*) AS n ${base}`).get(params).n;
   const rows = db.prepare(`
     SELECT t.id, t.author_name, t.author_handle, t.author_avatar, t.text, t.created_at, t.likes, t.retweets,
-           t.replies, t.views, t.bookmarks, t.media, t.urls, t.quoted, t.category, t.tag_error, s.accounts,
+           t.replies, t.views, t.bookmarks, t.media, t.urls, t.quoted, t.category, t.category_by, t.tag_unsure, t.tag_error, s.accounts,
            (SELECT GROUP_CONCAT(tag) FROM tags g WHERE g.tweet_id = t.id) AS tags
     ${base}
-    ORDER BY ${SORTS[sort] || SORTS.saved_desc}, t.id DESC
+    ORDER BY ${unsure === "1" ? "t.tag_confidence ASC, " : ""}${SORTS[sort] || SORTS.saved_desc}, t.id DESC
     LIMIT :limit OFFSET :offset`).all({ ...params, limit: Math.max(1, Math.min(Math.trunc(Number(limit)) || 60, 200)), offset: Math.max(0, Math.trunc(Number(offset)) || 0) });
   return {
     total,
@@ -155,6 +162,8 @@ export function stats() {
     total: db.prepare(`SELECT COUNT(*) AS n FROM tweets`).get().n,
     untagged: db.prepare(`SELECT COUNT(*) AS n FROM tweets WHERE tagged_at IS NULL`).get().n,
     failed: db.prepare(`SELECT COUNT(*) AS n FROM tweets WHERE tag_error IS NOT NULL`).get().n,
+    unsure: db.prepare(`SELECT COUNT(*) AS n FROM tweets t WHERE ${UNSURE_SQL}`).get().n,
+    outdated: outdatedIds().length,
     accounts: db.prepare(`SELECT account AS name, COUNT(*) AS n FROM saves GROUP BY account ORDER BY n DESC`).all(),
     categories: db.prepare(`SELECT category AS name, COUNT(*) AS n FROM tweets WHERE category IS NOT NULL GROUP BY category ORDER BY n DESC`).all(),
     tags: db.prepare(`SELECT tag AS name, COUNT(*) AS n FROM tags GROUP BY tag ORDER BY n DESC, tag LIMIT 300`).all(),
@@ -177,6 +186,12 @@ export function pageMap(account, size = 84) {
 
 // ---------- for AI tagging ----------
 
+// Posts the local tagger sorted before 0.1.2: sorted by matching descriptions, before it had the text model
+// and the trained classifier. Re-tagging them is free and keeps their pictures' vectors.
+export const outdatedIds = () => db.prepare(`SELECT id FROM tweets t WHERE t.tagged_at IS NOT NULL AND t.description IS NULL
+  AND t.category_by IS NULL AND COALESCE(t.ai_refused, 0) = 0
+  AND EXISTS (SELECT 1 FROM local_vectors v WHERE v.tweet_id = t.id AND v.v2 IS NULL) ORDER BY captured_at DESC`).all().map((r) => r.id);
+
 // Newest first. all: every post; failed: the ones the last run couldn't tag; default: never tagged.
 export function idsToTag(all = false, failed = false) {
   const where = all ? "" : failed ? "WHERE tag_error IS NOT NULL" : "WHERE tagged_at IS NULL";
@@ -186,5 +201,5 @@ export function idsToTag(all = false, failed = false) {
 // Posts with the extra context tagging uses (bio, alt text, link titles).
 export function tweetsByIds(ids) {
   return db.prepare(`SELECT id, author_handle, author_name, text, urls, quoted, media, raw FROM tweets WHERE id IN (SELECT value FROM json_each(?))`)
-    .all(JSON.stringify(ids)).map(({ raw, ...t }) => ({ ...t, ...extras(raw) }));
+    .all(JSON.stringify(ids)).map(({ raw, ...t }) => ({ ...t, ...extras(raw), sensitive: isSensitive(raw) }));
 }

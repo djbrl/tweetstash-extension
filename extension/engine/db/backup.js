@@ -12,7 +12,7 @@ import { CATEGORIES } from "../catalog.js";
 const FORMAT = "tweetstash-backup";
 const TWEET_COLUMNS = ["id", "author_name", "author_handle", "author_avatar", "text", "created_at", "likes", "retweets", "replies",
   "views", "bookmarks", "media", "urls", "quoted", "lang", "category", "tagged_at", "captured_at", "raw", "tag_error",
-  "description", "medium", "subjects", "nsfw_level", "ai_refused"];
+  "description", "medium", "subjects", "nsfw_level", "ai_refused", "category_by", "tag_confidence", "tag_unsure"];
 
 export function backupAll() {
   return {
@@ -43,6 +43,10 @@ function cleanTweet(t) {
     raw: typeof t.raw === "string" && t.raw.length < 200000 ? t.raw : null,
     tag_error: str(t.tag_error, 300), description: str(t.description, 300), medium: str(t.medium, 40),
     subjects: str(t.subjects, 300), nsfw_level: LEVELS.includes(t.nsfw_level) ? t.nsfw_level : null, ai_refused: t.ai_refused ? 1 : 0,
+    // Who set the category: your own picks are what the local tagger learns from.
+    category_by: ["user", "local", "claude"].includes(t.category_by) ? t.category_by : null,
+    tag_confidence: Number.isFinite(Number(t.tag_confidence)) && t.tag_confidence !== null ? Math.min(1, Math.max(0, Number(t.tag_confidence))) : null,
+    tag_unsure: t.tag_unsure ? 1 : 0,
   };
 }
 

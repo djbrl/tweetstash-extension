@@ -83,6 +83,12 @@ const sizer = new ResizeObserver((entries) => {
   }
 });
 
+// The category, plus a button to change it. "Not sure" and "picked by you" show on the dot.
+export const catHtml = (b) =>
+  `<span class="cat${b.tag_unsure && b.category_by === "local" ? " unsure" : ""}${b.category_by === "user" ? " mine" : ""}" data-category="${esc(b.category)}"
+    title="${b.category_by === "user" ? "You picked this" : b.tag_unsure && b.category_by === "local" ? "The local tagger wasn't sure" : "Show all in this category"}">${esc(b.category)}</span>`
+  + `<button class="cat-edit" type="button" data-cat-edit title="Change category" aria-label="Change category"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6l4 4 4-4"/></svg></button>`;
+
 export function card(b, note = "") {
   const url = postUrl(b.author_handle, b.id);
   const el = document.createElement("article");
@@ -111,7 +117,7 @@ export function card(b, note = "") {
       <span class="stat" title="Reposts + quotes">⟲ ${fmtNum(b.retweets)}</span>
       ${b.views ? `<span class="stat" title="Views">◉ ${fmtNum(b.views)}</span>` : ""}
       ${multiAccount ? b.accounts.map((a) => `<span class="acct-badge">${esc(a)}</span>`).join("") : ""}
-      ${b.category ? `<span class="cat" data-category="${esc(b.category)}">${esc(b.category)}</span>` : ""}
+      ${b.category ? `<span class="cat-wrap">${catHtml(b)}</span>` : ""}
     </div>`;
   el._data = b;
   sizer.observe(el);
