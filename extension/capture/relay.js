@@ -410,7 +410,7 @@
     panel.querySelector("#tn-mgo").onclick = goStash;
     panel.querySelector("#tn-msync").onclick = syncNow;
     panel.querySelector("#tn-mstop").onclick = stopNow;
-    // The panel always appears collapsed; the chevron or a click on the header (not its buttons) expands it.
+    // The panel appears expanded; the chevron or a click on the header (not its buttons) collapses it.
     const setMin = (min) => {
       panel.classList.toggle("tn-min", min);
       const fold = panel.querySelector("#tn-fold");
@@ -422,7 +422,7 @@
       if (e.target.closest(".tn-acts")) return; // the collapsed bar's own buttons
       setMin(!panel.classList.contains("tn-min"));
     };
-    setMin(true);
+    setMin(false);
     refreshKnown();
     render();
   }
